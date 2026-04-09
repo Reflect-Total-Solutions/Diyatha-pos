@@ -26,7 +26,7 @@ create policy "admin_insert_activity_images"
   for insert
   with check (
     bucket_id = 'activity-images' 
-    and (auth.jwt() ->> 'role' = 'admin')
+    and (auth.jwt() -> 'app_metadata' ->> 'role' = 'admin' OR auth.jwt() -> 'user_metadata' ->> 'role' = 'admin' OR auth.jwt() ->> 'role' = 'admin')
   );
 
 -- Allow admins to update images
@@ -35,7 +35,7 @@ create policy "admin_update_activity_images"
   for update
   using (
     bucket_id = 'activity-images' 
-    and (auth.jwt() ->> 'role' = 'admin')
+    and (auth.jwt() -> 'app_metadata' ->> 'role' = 'admin' OR auth.jwt() -> 'user_metadata' ->> 'role' = 'admin' OR auth.jwt() ->> 'role' = 'admin')
   );
 
 -- Allow admins to delete images
@@ -44,5 +44,5 @@ create policy "admin_delete_activity_images"
   for delete
   using (
     bucket_id = 'activity-images' 
-    and (auth.jwt() ->> 'role' = 'admin')
+    and (auth.jwt() -> 'app_metadata' ->> 'role' = 'admin' OR auth.jwt() -> 'user_metadata' ->> 'role' = 'admin' OR auth.jwt() ->> 'role' = 'admin')
   );

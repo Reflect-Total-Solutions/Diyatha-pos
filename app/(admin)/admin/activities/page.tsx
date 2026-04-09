@@ -145,6 +145,7 @@ export default function AdminActivitiesPage() {
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50">
               <tr>
+                <th className="px-3 py-2 text-left font-medium text-slate-600">Icon</th>
                 <th className="px-3 py-2 text-left font-medium text-slate-600">Name</th>
                 <th className="px-3 py-2 text-left font-medium text-slate-600">Category</th>
                 <th className="px-3 py-2 text-right font-medium text-slate-600">Local</th>
@@ -156,6 +157,24 @@ export default function AdminActivitiesPage() {
             <tbody className="divide-y divide-slate-100 bg-white">
               {filteredActivities.map((activity) => (
                 <tr key={activity.id}>
+                  <td className="px-3 py-2 text-slate-800">
+                    <div className="h-10 w-10 overflow-hidden rounded-md border border-slate-200 bg-slate-50">
+                      {activity.image_url ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={activity.image_url}
+                          alt={activity.name}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-slate-400">
+                          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                  </td>
                   <td className="px-3 py-2 text-slate-800">
                     <p className="font-medium">{activity.name}</p>
                     <p className="text-xs text-slate-500">Order: {activity.display_order}</p>

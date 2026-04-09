@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+import ImageUpload from '@/components/admin/ImageUpload';
 import { Button } from '@/components/ui/button';
 import type { Activity } from '@/types/activity';
 import type { Category } from '@/types/category';
@@ -229,12 +230,10 @@ export default function ActivityDetailPage() {
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Image URL</label>
-                <input
-                  type="url"
+                <label className="mb-1 block text-sm font-medium text-slate-700">Image</label>
+                <ImageUpload
                   value={imageUrl}
-                  onChange={(event) => setImageUrl(event.target.value)}
-                  className="h-10 w-full rounded-md border border-slate-300 px-3 text-sm"
+                  onChange={(url) => setImageUrl(url)}
                 />
               </div>
             </div>

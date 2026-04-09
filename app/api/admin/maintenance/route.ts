@@ -82,7 +82,10 @@ export async function GET() {
         .select('id, message, created_at')
         .order('created_at', { ascending: false })
         .limit(10),
-      resolvePrinterTarget(),
+      Promise.race([
+        resolvePrinterTarget(),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 2500))
+      ]),
     ]);
 
     if (activeUsers.error) throw activeUsers.error;

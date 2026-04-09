@@ -14,6 +14,8 @@ type TransactionHistoryProps = {
   searchQuery: string;
   onSearchQueryChange: (value: string) => void;
   onCancelTransaction: (transactionId: string) => void;
+  onReprintTransaction?: (transactionId: string) => void;
+  onReprintGroup?: (groupId: string) => void;
   cancellingTransactionId?: string | null;
   isLoading?: boolean;
 };
@@ -41,6 +43,8 @@ export default function TransactionHistory({
   searchQuery,
   onSearchQueryChange,
   onCancelTransaction,
+  onReprintTransaction,
+  onReprintGroup,
   cancellingTransactionId = null,
   isLoading = false,
 }: TransactionHistoryProps) {
@@ -64,6 +68,7 @@ export default function TransactionHistory({
         <table className="min-w-full divide-y divide-slate-200 text-sm">
           <thead className="sticky top-0 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
             <tr>
+              <th className="px-3 py-2 text-left font-semibold">Group</th>
               <th className="px-3 py-2 text-left font-semibold">Token</th>
               <th className="px-3 py-2 text-left font-semibold">Activity</th>
               <th className="px-3 py-2 text-left font-semibold">Amount</th>
@@ -75,13 +80,13 @@ export default function TransactionHistory({
           <tbody className="divide-y divide-slate-100 bg-white">
             {isLoading ? (
               <tr>
-                <td colSpan={6} className="px-3 py-8 text-center text-slate-500">
+                <td colSpan={7} className="px-3 py-8 text-center text-slate-500">
                   Loading transactions...
                 </td>
               </tr>
             ) : transactions.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-3 py-8 text-center text-slate-500">
+                <td colSpan={7} className="px-3 py-8 text-center text-slate-500">
                   No transactions found
                 </td>
               </tr>
@@ -91,6 +96,9 @@ export default function TransactionHistory({
 
                 return (
                   <tr key={transaction.id} className="hover:bg-slate-50">
+                    <td className="px-3 py-2 font-medium text-slate-500">
+                      {transaction.transaction_group_id.slice(0, 8)}...
+                    </td>
                     <td className="px-3 py-2 font-medium text-slate-900">
                       {transaction.token_number ?? '-'}
                     </td>
@@ -111,15 +119,37 @@ export default function TransactionHistory({
                     </td>
                     <td className="px-3 py-2 text-slate-600">{formatTime(transaction.created_at)}</td>
                     <td className="px-3 py-2 text-right">
-                      <Button
-                        type="button"
-                        size="xs"
-                        variant="outline"
-                        disabled={Boolean(transaction.cancelled_at) || cancellingTransactionId === transaction.id}
-                        onClick={() => onCancelTransaction(transaction.id)}
-                      >
-                        {cancellingTransactionId === transaction.id ? 'Cancelling...' : 'Cancel'}
-                      </Button>
+                      <div className="flex items-center justify-end gap-2">
+                        {onReprintGroup && !transaction.cancelled_at && (
+                          <Button
+                            type="button"
+                            size="xs"
+                            variant="outline"
+                            onClick={() => onReprintGroup(transaction.transaction_group_id)}
+                          >
+                            Reprint Group
+                          </Button>
+                        )}
+                        {onReprintTransaction && !transaction.cancelled_at && (
+                          <Button
+                            type="button"
+                            size="xs"
+                            variant="outline"
+                            onClick={() => onReprintTransaction(transaction.id)}
+                          >
+                            Reprint
+                          </Button>
+                        )}
+                        <Button
+                          type="button"
+                          size="xs"
+                          variant="outline"
+                          disabled={Boolean(transaction.cancelled_at) || cancellingTransactionId === transaction.id}
+                          onClick={() => onCancelTransaction(transaction.id)}
+                        >
+                          {cancellingTransactionId === transaction.id ? 'Cancelling...' : 'Cancel'}
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 );

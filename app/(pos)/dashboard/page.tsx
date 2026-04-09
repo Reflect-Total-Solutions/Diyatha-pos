@@ -650,6 +650,15 @@ export default function DashboardPage() {
           isLoading={isTransactionsLoading}
           cancellingTransactionId={cancellingTransactionId}
           onCancelTransaction={handleCancelTransaction}
+          onReprintTransaction={(transactionId) => {
+            void printTicketsInBackground([{ id: transactionId }]);
+          }}
+          onReprintGroup={(groupId) => {
+            const groupTxns = transactions.filter(t => t.transaction_group_id === groupId && !t.cancelled_at);
+            if (groupTxns.length > 0) {
+              void printTicketsInBackground(groupTxns.map(t => ({ id: t.id })));
+            }
+          }}
         />
       </div>
 

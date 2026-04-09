@@ -61,7 +61,7 @@ export async function GET(request: Request) {
 
     let query = supabase
       .from('transactions')
-      .select('*', { count: 'exact' })
+      .select('*, tokens!inner(token_number)', { count: 'exact' })
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -85,12 +85,24 @@ export async function GET(request: Request) {
       throw error;
     }
 
-    const rows = (data ?? []) as unknown as TransactionRow[];
-    const total = count ?? rows.length;
+    const rows = (data ?? []) as any[];
+    
+    // Map tokens back to token_number for the client
+    const formattedRows = rows.map(row => {
+      const tokensArray = Array.isArray(row.tokens) ? row.tokens : [row.tokens];
+      const tokenObj = tokensArray[0] as { token_number?: string } | undefined;
+      
+      return {
+        ...row,
+        token_number: tokenObj?.token_number ?? null,
+      };
+    });
+    
+    const total = count ?? formattedRows.length;
 
     return Response.json(
       {
-        data: rows,
+        data: formattedRows,
         total,
         page,
         limit,

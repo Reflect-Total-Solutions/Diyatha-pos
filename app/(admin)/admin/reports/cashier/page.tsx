@@ -2,11 +2,12 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
+import { formatInTimeZone } from 'date-fns-tz';
 import { Button } from '@/components/ui/button';
 import { useReports } from '@/hooks/useReports';
 
 function getTodayDateValue(): string {
-  return new Date().toISOString().slice(0, 10);
+  return formatInTimeZone(new Date(), 'Asia/Colombo', 'yyyy-MM-dd');
 }
 
 export default function CashierReportPage() {

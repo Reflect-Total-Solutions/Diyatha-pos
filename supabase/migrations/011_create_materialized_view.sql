@@ -1,6 +1,8 @@
 -- 011_create_materialized_view.sql
 
-create materialized view if not exists public.daily_summary as
+drop materialized view if exists public.daily_summary;
+
+create or replace view public.daily_summary as
   select
     t.cashier_id,
     date(t.created_at at time zone 'Asia/Colombo') as sale_date,
@@ -19,11 +21,4 @@ create materialized view if not exists public.daily_summary as
     a.name,
     t.price_type;
 
-create unique index if not exists idx_daily_summary_unique
-  on public.daily_summary(cashier_id, sale_date, activity_id, price_type);
-
-create index if not exists idx_daily_summary_sale_date_desc
-  on public.daily_summary(sale_date desc);
-
-create index if not exists idx_daily_summary_activity_id
-  on public.daily_summary(activity_id);
+-- (Indexes not supported on regular views unless it's materialized, so we can ignore or recreate on the underlying tables if needed)

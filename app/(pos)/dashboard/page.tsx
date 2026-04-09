@@ -63,7 +63,6 @@ export default function DashboardPage() {
     summary,
     isLoading: isTransactionsLoading,
     isMutating: isTransactionsMutating,
-    error: transactionsError,
     refetch: refetchTransactions,
     createBulkTransactions,
     cancelTransaction,
@@ -416,65 +415,57 @@ export default function DashboardPage() {
 
   return (
     <>
-      <main className="mx-auto min-h-screen w-full max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8">
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[2fr_1fr]">
-        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                Phase 6
-              </p>
-              <h1 className="mt-2 text-2xl font-semibold text-slate-900 sm:text-3xl">
-                POS Dashboard
-              </h1>
-              <p className="mt-2 text-sm text-slate-600">
-                Select multiple activities, adjust quantities, then confirm payment once.
-              </p>
-            </div>
+      <main className="mx-auto min-h-screen w-full max-w-[1600px] px-4 py-4 sm:px-6 lg:px-8">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Phase 6
+          </p>
+          <h1 className="mt-1 text-2xl font-bold text-slate-900 sm:text-3xl">
+            POS Dashboard
+          </h1>
+          <p className="mt-1 text-sm text-slate-600">
+            Select activities, adjust quantities, then confirm payment
+          </p>
+        </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                disabled={!summary.currentGroupId || isTransactionsMutating}
-                onClick={handleEndCustomer}
-              >
-                End Customer
-              </Button>
-              <Link
-                href="/logout"
-                className="inline-flex h-8 items-center justify-center rounded-lg border border-slate-300 px-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100"
-              >
-                Sign out
-              </Link>
-            </div>
-          </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/logout"
+            className="inline-flex h-11 items-center justify-center rounded-lg border-2 border-slate-400 px-4 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100"
+          >
+            Sign out
+          </Link>
+        </div>
+      </div>
 
-          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_400px]">
+        <section className="rounded-2xl border-2 border-slate-300 bg-white p-5 shadow-md">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <PricingToggle
               value={priceType}
               onChange={setPriceType}
               disabled={isTransactionsMutating}
             />
 
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 overflow-x-auto pb-2">
               <button
                 type="button"
-                className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+                className={`rounded-lg border-2 px-3 py-2 text-xs font-bold uppercase tracking-wide transition-colors shrink-0 ${
                   selectedCategoryId === 'all'
                     ? 'border-slate-900 bg-slate-900 text-white'
                     : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
                 }`}
                 onClick={() => setSelectedCategoryId('all')}
               >
-                All Categories
+                All
               </button>
 
               {categories.map((category) => (
                 <button
                   key={category.id}
                   type="button"
-                  className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+                  className={`rounded-lg border-2 px-3 py-2 text-xs font-bold uppercase tracking-wide transition-colors shrink-0 ${
                     selectedCategoryId === category.id
                       ? 'border-slate-900 bg-slate-900 text-white'
                       : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
@@ -487,7 +478,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="mt-4">
+          <div className="mt-5">
             <ActivityGrid
               activities={filteredActivities}
               isLoading={isActivitiesLoading}
@@ -501,46 +492,18 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <div className="space-y-4">
-          <DailySummary
-            transactions={transactions}
-            activeGroupId={summary.currentGroupId}
-            activeGroupCount={summary.transactionCount}
-            activeGroupAmount={summary.groupTotalAmount}
-          />
-
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-900">Current Group</h2>
-            <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                <p className="text-xs uppercase tracking-wide text-slate-500">Group ID</p>
-                <p className="mt-1 font-medium text-slate-900">
-                  {summary.currentGroupId ? `${summary.currentGroupId.slice(0, 8)}...` : 'Not started'}
-                </p>
-              </div>
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                <p className="text-xs uppercase tracking-wide text-slate-500">Items</p>
-                <p className="mt-1 font-medium text-slate-900">{summary.transactionCount}</p>
-              </div>
-            </div>
-            {transactionsError ? (
-              <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-                {transactionsError}
-              </p>
-            ) : null}
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-col gap-4 lg:sticky lg:top-4 lg:h-fit">
+          <div className="rounded-2xl border-3 border-emerald-400 bg-gradient-to-br from-white to-emerald-50 p-5 shadow-lg">
+            <div className="flex items-center justify-between gap-3 mb-4">
               <div>
-                <h2 className="text-lg font-semibold text-slate-900">Selected Activities</h2>
-                <p className="text-xs text-slate-500">
-                  {cartSummary.uniqueActivities} activities, {cartSummary.totalTickets} tickets
+                <h2 className="text-2xl font-bold text-slate-900">Shopping Cart</h2>
+                <p className="text-xs text-slate-600">
+                  {cartSummary.uniqueActivities} item(s) • {cartSummary.totalTickets} ticket(s)
                 </p>
               </div>
               <button
                 type="button"
-                className="inline-flex h-8 items-center justify-center rounded-md border border-slate-300 px-2 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+                className="inline-flex h-10 items-center justify-center rounded-lg border-2 border-red-400 bg-red-50 px-3 text-xs font-bold text-red-700 hover:bg-red-100 disabled:opacity-50"
                 disabled={cartItems.length === 0 || isConfirmingPayment || isTransactionsMutating}
                 onClick={clearCart}
               >
@@ -548,100 +511,125 @@ export default function DashboardPage() {
               </button>
             </div>
 
-            <div className="mt-3 space-y-2">
-              {cartItems.map((item) => (
-                <div key={`${item.activity.id}-${item.priceType}`} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium text-slate-900">{item.activity.name}</p>
-                    <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-slate-600">
-                      {item.priceType}
-                    </span>
-                  </div>
-                  <div className="mt-2 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
+            <div className="max-h-80 space-y-2 overflow-y-auto rounded-xl bg-white p-3 border-2 border-slate-300">
+              {cartItems.map((item) => {
+                const unitPrice = item.priceType === 'local' ? item.activity.local_price : item.activity.foreign_price;
+                
+                return (
+                  <div key={`${item.activity.id}-${item.priceType}`} className="rounded-lg border-2 border-slate-300 bg-gradient-to-r from-slate-50 to-white p-3 hover:from-blue-50 transition-colors">
+                    <div className="flex items-start gap-2 mb-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-slate-900 line-clamp-2">{item.activity.name}</p>
+                        <span className="mt-1 inline-block rounded-lg bg-slate-200 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-700 border border-slate-300">
+                          {item.priceType}
+                        </span>
+                      </div>
                       <button
                         type="button"
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-300 text-sm font-medium text-slate-700 hover:bg-white"
-                        disabled={isConfirmingPayment || isTransactionsMutating}
-                        onClick={() => updateCartQuantity(item.activity.id, item.priceType, item.quantity - 1)}
-                      >
-                        -
-                      </button>
-                      <input
-                        type="number"
-                        min={1}
-                        step={1}
-                        value={item.quantity}
-                        inputMode="numeric"
-                        className="h-8 w-16 rounded-md border border-slate-300 px-2 text-center text-sm"
-                        disabled={isConfirmingPayment || isTransactionsMutating}
-                        onChange={(event) => {
-                          const parsed = Number.parseInt(event.target.value, 10);
-                          updateCartQuantity(item.activity.id, item.priceType, Number.isFinite(parsed) ? parsed : 1);
-                        }}
-                      />
-                      <button
-                        type="button"
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-300 text-sm font-medium text-slate-700 hover:bg-white"
-                        disabled={isConfirmingPayment || isTransactionsMutating}
-                        onClick={() => updateCartQuantity(item.activity.id, item.priceType, item.quantity + 1)}
-                      >
-                        +
-                      </button>
-                    </div>
-
-                    <div className="text-right">
-                      <p className="text-xs text-slate-500">
-                        {formatCurrency(
-                          item.priceType === 'local'
-                            ? item.activity.local_price
-                            : item.activity.foreign_price
-                        )}
-                      </p>
-                      <button
-                        type="button"
-                        className="mt-1 text-xs font-medium text-rose-700 hover:text-rose-800"
+                        className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-md border-2 border-red-400 bg-red-50 text-xs font-bold text-red-700 hover:bg-red-100"
                         disabled={isConfirmingPayment || isTransactionsMutating}
                         onClick={() => removeFromCart(item.activity.id, item.priceType)}
+                        title="Remove item"
                       >
-                        Remove
+                        ✕
                       </button>
                     </div>
+                    
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+                        <button
+                          type="button"
+                          className="inline-flex h-7 w-7 items-center justify-center rounded border border-slate-300 text-sm font-bold text-slate-700 hover:bg-white"
+                          disabled={isConfirmingPayment || isTransactionsMutating}
+                          onClick={() => updateCartQuantity(item.activity.id, item.priceType, item.quantity - 1)}
+                        >
+                          -
+                        </button>
+                        <input
+                          type="number"
+                          min={1}
+                          step={1}
+                          value={item.quantity}
+                          inputMode="numeric"
+                          className="h-7 w-12 rounded border border-slate-300 px-1.5 text-center text-sm font-bold"
+                          disabled={isConfirmingPayment || isTransactionsMutating}
+                          onChange={(event) => {
+                            const parsed = Number.parseInt(event.target.value, 10);
+                            updateCartQuantity(item.activity.id, item.priceType, Number.isFinite(parsed) ? parsed : 1);
+                          }}
+                        />
+                        <button
+                          type="button"
+                          className="inline-flex h-7 w-7 items-center justify-center rounded border border-slate-300 text-sm font-bold text-slate-700 hover:bg-white"
+                          disabled={isConfirmingPayment || isTransactionsMutating}
+                          onClick={() => updateCartQuantity(item.activity.id, item.priceType, item.quantity + 1)}
+                        >
+                          +
+                        </button>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-slate-600">{formatCurrency(unitPrice)}</p>
+                        <p className="font-bold text-slate-900">{formatCurrency(unitPrice * item.quantity)}</p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
 
               {cartItems.length === 0 ? (
-                <p className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-4 text-center text-sm text-slate-500">
-                  No activities selected yet.
-                </p>
+                <div className="rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center">
+                  <p className="text-3xl mb-2">🛒</p>
+                  <p className="text-sm font-semibold text-slate-600">No items yet</p>
+                  <p className="text-xs text-slate-500 mt-1">Select activities to add</p>
+                </div>
               ) : null}
             </div>
 
-            <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
-              <p className="text-xs uppercase tracking-wide text-slate-500">Total</p>
-              <p className="mt-1 text-lg font-semibold text-slate-900">
-                {formatCurrency(cartSummary.totalAmount)}
-              </p>
-              <p className="text-xs text-slate-500">{cartSummary.totalTickets} ticket(s)</p>
+            <div className="mt-4 rounded-xl border-3 border-yellow-400 bg-slate-900 p-4 text-white">
+              <p className="text-xs font-bold uppercase tracking-widest text-yellow-300">Cart Total</p>
+              <p className="mt-2 text-3xl font-bold text-yellow-400">{formatCurrency(cartSummary.totalAmount)}</p>
+              <p className="mt-1 text-xs text-slate-300">{cartSummary.totalTickets} ticket(s)</p>
             </div>
+
+            {paymentError ? (
+              <p className="mt-3 rounded-lg border-2 border-red-400 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">
+                {paymentError}
+              </p>
+            ) : null}
 
             <Button
               type="button"
-              className="mt-3 w-full"
+              className="mt-4 w-full h-14 rounded-xl border-2 border-green-600 bg-green-600 text-lg font-bold text-white hover:bg-green-700"
               disabled={cartItems.length === 0 || isConfirmingPayment || isTransactionsMutating}
               onClick={() => {
                 setPaymentError(null);
                 setIsPaymentOpen(true);
               }}
             >
-              Review & Confirm
+              {isConfirmingPayment ? 'Processing...' : 'Checkout'}
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              disabled={!summary.currentGroupId || isTransactionsMutating}
+              onClick={handleEndCustomer}
+              className="mt-2 w-full h-11 rounded-xl border-2 border-slate-400 font-semibold text-slate-700 hover:bg-slate-100"
+            >
+              End Customer
             </Button>
           </div>
+
+          <DailySummary
+            transactions={transactions}
+            activeGroupId={summary.currentGroupId}
+            activeGroupCount={summary.transactionCount}
+            activeGroupAmount={summary.groupTotalAmount}
+          />
         </div>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-6">
         <TransactionHistory
           transactions={transactions}
           activitiesById={activityById}

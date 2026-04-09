@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Image from 'next/image';
 import { useMemo } from 'react';
@@ -42,25 +42,25 @@ export default function ActivityButton({
     <Button
       type="button"
       variant="outline"
-      className="h-auto w-full flex-col items-start gap-4 rounded-xl border-slate-200 px-4 py-4 text-left hover:border-slate-300 hover:bg-slate-50 relative overflow-hidden"
+      className="group h-auto w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-slate-300 bg-white px-3 py-6 text-center transition-all duration-200 hover:border-slate-400 hover:shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
       disabled={disabled || !activity.is_active}
       onClick={() => onSelect?.(activity)}
     >
-      <div className="flex w-full items-start gap-3">
+      <div className="relative w-full">
         {activity.image_url ? (
-          <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+          <div className="relative mx-auto h-24 w-24 overflow-hidden rounded-xl border-2 border-slate-200 bg-slate-100">
             <Image
               src={activity.image_url}
               alt={activity.name}
               fill
-              className="object-cover"
-              sizes="64px"
+              className="object-cover group-hover:scale-105 transition-transform"
+              sizes="96px"
             />
           </div>
         ) : (
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-400">
+          <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-xl border-2 border-slate-300 bg-gradient-to-br from-slate-100 to-slate-200 text-slate-400">
             <svg
-              className="h-6 w-6"
+              className="h-10 w-10"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -70,20 +70,21 @@ export default function ActivityButton({
             </svg>
           </div>
         )}
-        <div className="w-full flex-1 overflow-hidden">
-          <p className="truncate text-sm font-semibold text-slate-900">{activity.name}</p>
-          {activity.description ? (
-            <p className="mt-1 line-clamp-2 text-xs text-slate-600">{activity.description}</p>
-          ) : null}
-        </div>
       </div>
 
-      <div className="flex w-full items-center justify-between text-xs mt-auto pt-2 border-t border-slate-100">
-        <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 font-medium uppercase tracking-wide text-slate-600">
-          {selectedPriceType}
-        </span>
-        <span className="font-semibold text-slate-800">{formatCurrency(selectedPrice)}</span>
+      <div className="w-full overflow-hidden">
+        <p className="text-sm font-bold text-slate-900 line-clamp-2 leading-tight">{activity.name}</p>
+      </div>
+
+      <div className="w-full space-y-2">
+        <div className="flex items-center justify-center gap-2">
+          <span className="inline-block rounded-lg bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-700 border border-slate-300">
+            {selectedPriceType}
+          </span>
+        </div>
+        <div className="text-lg font-bold text-emerald-600">{formatCurrency(selectedPrice)}</div>
       </div>
     </Button>
   );
 }
+

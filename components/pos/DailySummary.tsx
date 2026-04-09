@@ -69,45 +69,46 @@ export default function DailySummary({
   }, [transactions]);
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="flex items-start justify-between gap-4">
+    <section className="rounded-2xl border-2 border-slate-300 bg-gradient-to-br from-white to-slate-50 p-5 shadow-md">
+      <div className="space-y-4">
         <div>
-          <h2 className="text-lg font-semibold text-slate-900">Daily Summary</h2>
-          <p className="text-xs text-slate-500">Based on current loaded transactions</p>
+          <h2 className="text-2xl font-bold text-slate-900">Daily Summary</h2>
+          <p className="mt-1 text-sm text-slate-600">Based on current loaded transactions</p>
         </div>
-        <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-right">
-          <p className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Active Group</p>
-          <p className="mt-1 text-sm font-medium text-slate-900">
-            {activeGroupId ? `${activeGroupCount} items` : 'No open group'}
+        
+        <div className="rounded-xl border-2 border-blue-300 bg-gradient-to-r from-blue-50 to-blue-100 px-4 py-3 text-center">
+          <p className="text-xs font-bold uppercase tracking-wider text-blue-700">Active Group</p>
+          <p className="mt-2 text-2xl font-bold text-blue-900">
+            {activeGroupId ? activeGroupCount : 0} items
           </p>
-          <p className="text-xs text-slate-600">{formatCurrency(activeGroupAmount)}</p>
+          <p className="mt-1 text-lg font-bold text-blue-800">{formatCurrency(activeGroupAmount)}</p>
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Tickets</p>
-          <p className="mt-1 text-xl font-semibold text-slate-900">{summary.totalCount}</p>
+      <div className="mt-5 grid grid-cols-2 gap-3">
+        <div className="rounded-xl border-2 border-slate-300 bg-gradient-to-br from-slate-100 to-slate-50 p-4 text-center">
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-600">Tickets</p>
+          <p className="mt-2 text-3xl font-bold text-slate-900">{summary.totalCount}</p>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Local</p>
-          <p className="mt-1 text-xl font-semibold text-slate-900">{summary.localCount}</p>
-          <p className="text-xs text-slate-500">{formatCurrency(summary.localAmount)}</p>
+        <div className="rounded-xl border-2 border-green-300 bg-gradient-to-br from-green-50 to-green-100 p-4 text-center">
+          <p className="text-xs font-bold uppercase tracking-wider text-green-700">Local</p>
+          <p className="mt-2 text-2xl font-bold text-green-900">{summary.localCount}</p>
+          <p className="mt-1 text-sm font-semibold text-green-800">{formatCurrency(summary.localAmount)}</p>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Foreign</p>
-          <p className="mt-1 text-xl font-semibold text-slate-900">{summary.foreignCount}</p>
-          <p className="text-xs text-slate-500">{formatCurrency(summary.foreignAmount)}</p>
+        <div className="rounded-xl border-2 border-orange-300 bg-gradient-to-br from-orange-50 to-orange-100 p-4 text-center">
+          <p className="text-xs font-bold uppercase tracking-wider text-orange-700">Foreign</p>
+          <p className="mt-2 text-2xl font-bold text-orange-900">{summary.foreignCount}</p>
+          <p className="mt-1 text-sm font-semibold text-orange-800">{formatCurrency(summary.foreignAmount)}</p>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Cancelled</p>
-          <p className="mt-1 text-xl font-semibold text-slate-900">{summary.cancelledCount}</p>
+        <div className="rounded-xl border-2 border-red-300 bg-gradient-to-br from-red-50 to-red-100 p-4 text-center">
+          <p className="text-xs font-bold uppercase tracking-wider text-red-700">Cancelled</p>
+          <p className="mt-2 text-2xl font-bold text-red-900">{summary.cancelledCount}</p>
         </div>
       </div>
 
-      <div className="mt-4 rounded-xl border border-slate-200 bg-slate-900 px-4 py-3 text-slate-50">
-        <p className="text-xs uppercase tracking-wide text-slate-300">Gross Total</p>
-        <p className="mt-1 text-2xl font-semibold">{formatCurrency(summary.totalAmount)}</p>
+      <div className="mt-5 rounded-2xl border-3 border-yellow-400 bg-gradient-to-r from-slate-900 to-slate-800 px-5 py-4 text-white shadow-lg">
+        <p className="text-xs font-bold uppercase tracking-widest text-yellow-300">Gross Total</p>
+        <p className="mt-2 text-4xl font-bold text-yellow-400">{formatCurrency(summary.totalAmount)}</p>
       </div>
     </section>
   );

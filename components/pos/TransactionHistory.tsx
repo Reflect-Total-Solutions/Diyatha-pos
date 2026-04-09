@@ -49,44 +49,44 @@ export default function TransactionHistory({
   isLoading = false,
 }: TransactionHistoryProps) {
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <section className="rounded-2xl border-2 border-slate-300 bg-white p-5 shadow-md">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-slate-900">Transaction History</h2>
-          <p className="text-xs text-slate-500">Search by token, activity, or reference</p>
+          <h2 className="text-2xl font-bold text-slate-900">Transaction History</h2>
+          <p className="text-sm text-slate-600">Search by token, activity, or reference</p>
         </div>
         <input
           type="text"
           value={searchQuery}
           onChange={(event) => onSearchQueryChange(event.target.value)}
           placeholder="Search token or reference"
-          className="h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none transition-colors focus:border-slate-500 sm:w-64"
+          className="h-12 w-full rounded-xl border-2 border-slate-300 px-4 text-base outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-200 sm:w-80"
         />
       </div>
 
-      <div className="mt-4 max-h-96 overflow-y-auto rounded-xl border border-slate-200">
-        <table className="min-w-full divide-y divide-slate-200 text-sm">
-          <thead className="sticky top-0 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+      <div className="mt-5 max-h-96 overflow-y-auto rounded-2xl border-2 border-slate-300 shadow-md">
+        <table className="w-full divide-y divide-slate-300 text-sm">
+          <thead className="sticky top-0 bg-slate-900 text-xs font-bold uppercase tracking-wider text-white">
             <tr>
-              <th className="px-3 py-2 text-left font-semibold">Group</th>
-              <th className="px-3 py-2 text-left font-semibold">Token</th>
-              <th className="px-3 py-2 text-left font-semibold">Activity</th>
-              <th className="px-3 py-2 text-left font-semibold">Amount</th>
-              <th className="px-3 py-2 text-left font-semibold">Status</th>
-              <th className="px-3 py-2 text-left font-semibold">Time</th>
-              <th className="px-3 py-2 text-right font-semibold">Action</th>
+              <th className="px-4 py-3 text-left">Group</th>
+              <th className="px-4 py-3 text-left">Token</th>
+              <th className="px-4 py-3 text-left">Activity</th>
+              <th className="px-4 py-3 text-left">Amount</th>
+              <th className="px-4 py-3 text-left">Status</th>
+              <th className="px-4 py-3 text-left">Time</th>
+              <th className="px-4 py-3 text-right">Action</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 bg-white">
+          <tbody className="divide-y divide-slate-200 bg-white">
             {isLoading ? (
               <tr>
-                <td colSpan={7} className="px-3 py-8 text-center text-slate-500">
+                <td colSpan={7} className="px-4 py-8 text-center text-slate-600 font-semibold">
                   Loading transactions...
                 </td>
               </tr>
             ) : transactions.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-3 py-8 text-center text-slate-500">
+                <td colSpan={7} className="px-4 py-8 text-center text-slate-600 font-semibold">
                   No transactions found
                 </td>
               </tr>
@@ -95,31 +95,31 @@ export default function TransactionHistory({
                 const activity = activitiesById.get(transaction.activity_id);
 
                 return (
-                  <tr key={transaction.id} className="hover:bg-slate-50">
-                    <td className="px-3 py-2 font-medium text-slate-500">
+                  <tr key={transaction.id} className="hover:bg-slate-100 transition-colors">
+                    <td className="px-4 py-3 font-semibold text-slate-600 text-xs">
                       {transaction.transaction_group_id.slice(0, 8)}...
                     </td>
-                    <td className="px-3 py-2 font-medium text-slate-900">
+                    <td className="px-4 py-3 font-bold text-slate-900 text-base">
                       {transaction.token_number ?? '-'}
                     </td>
-                    <td className="px-3 py-2 text-slate-700">
+                    <td className="px-4 py-3 text-slate-800 font-semibold">
                       {activity?.name ?? transaction.activity_id.slice(0, 8)}
                     </td>
-                    <td className="px-3 py-2 text-slate-700">{formatCurrency(transaction.amount)}</td>
-                    <td className="px-3 py-2">
+                    <td className="px-4 py-3 text-slate-900 font-bold text-base">{formatCurrency(transaction.amount)}</td>
+                    <td className="px-4 py-3">
                       {transaction.cancelled_at ? (
-                        <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
+                        <span className="rounded-lg border-2 border-amber-400 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-900 uppercase tracking-wider">
                           Cancelled
                         </span>
                       ) : (
-                        <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                        <span className="rounded-lg border-2 border-green-400 bg-green-50 px-3 py-1 text-xs font-bold text-green-900 uppercase tracking-wider">
                           Active
                         </span>
                       )}
                     </td>
-                    <td className="px-3 py-2 text-slate-600">{formatTime(transaction.created_at)}</td>
-                    <td className="px-3 py-2 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                    <td className="px-4 py-3 text-slate-700 font-semibold">{formatTime(transaction.created_at)}</td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex items-center justify-end gap-1.5 flex-wrap">
                         {onReprintGroup && !transaction.cancelled_at && (
                           <Button
                             type="button"

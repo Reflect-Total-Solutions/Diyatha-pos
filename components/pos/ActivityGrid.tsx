@@ -15,11 +15,11 @@ type ActivityGridProps = {
 
 function LoadingSkeleton() {
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 auto-rows-fr">
       {Array.from({ length: 8 }).map((_, index) => (
         <div
           key={`activity-skeleton-${index}`}
-          className="h-28 animate-pulse rounded-xl border border-slate-200 bg-slate-100"
+          className="h-40 animate-pulse rounded-2xl border-2 border-slate-200 bg-slate-100"
         />
       ))}
     </div>
@@ -68,14 +68,14 @@ export default function ActivityGrid({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 auto-rows-fr">
       {activities.map((activity) => {
         const isSelected = selectedActivityId === activity.id;
 
         return (
           <div
             key={activity.id}
-            className={isSelected ? 'rounded-xl ring-2 ring-slate-900 ring-offset-1' : undefined}
+            className={isSelected ? 'rounded-2xl ring-3 ring-blue-500 ring-offset-2' : undefined}
           >
             <ActivityButton
               activity={activity}

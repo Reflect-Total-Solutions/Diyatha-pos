@@ -3,7 +3,7 @@ import { toApiError } from '@/lib/errors';
 import { rateLimit } from '@/lib/rateLimit';
 import { requireRequestUser } from '@/lib/request-user';
 import { ActivitySchema, validateInput } from '@/lib/schemas';
-import { supabaseServer } from '@/lib/supabase-server';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
 import type { Database } from '@/types/database';
 
 export const runtime = 'nodejs';
@@ -31,7 +31,8 @@ function parsePagination(url: string) {
 }
 
 async function ensureCategoryExists(categoryId: string): Promise<boolean> {
-  const { data, error } = await supabaseServer
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
     .from('categories')
     .select('id')
     .eq('id', categoryId)
@@ -47,6 +48,7 @@ async function ensureCategoryExists(categoryId: string): Promise<boolean> {
 export async function GET(request: Request) {
   try {
     const user = await requireRequestUser();
+    const supabase = await createSupabaseServerClient();
 
     const allowed = rateLimit(
       `activities:list:${user.id}`,
@@ -68,7 +70,7 @@ export async function GET(request: Request) {
     const offset = (page - 1) * limit;
     const isAdmin = user.role === 'admin';
 
-    let query = supabaseServer
+    let query = supabase
       .from('activities')
       .select('*', { count: 'exact' })
       .order('display_order', { ascending: true })
@@ -119,6 +121,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const user = await requireRequestUser();
+    const supabase = await createSupabaseServerClient();
 
     const allowed = rateLimit(
       `activities:create:${user.id}`,
@@ -185,7 +188,7 @@ export async function POST(request: Request) {
       display_order: validation.data.display_order ?? 0,
     };
 
-    const { data, error } = await supabaseServer
+    const { data, error } = await supabase
       .from('activities')
       .insert(insertPayload as never)
       .select('*')
@@ -207,7 +210,7 @@ export async function POST(request: Request) {
       );
     }
 
-    await supabaseServer.from('audit_log').insert(
+    await supabase.from('audit_log').insert(
       {
         user_id: user.id,
         action: 'CREATE',

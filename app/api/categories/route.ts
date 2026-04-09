@@ -3,7 +3,7 @@ import { toApiError } from '@/lib/errors';
 import { rateLimit } from '@/lib/rateLimit';
 import { requireRequestUser } from '@/lib/request-user';
 import { CategorySchema, validateInput } from '@/lib/schemas';
-import { supabaseServer } from '@/lib/supabase-server';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
 import type { Database } from '@/types/database';
 
 export const runtime = 'nodejs';
@@ -32,6 +32,7 @@ function parsePagination(url: string) {
 export async function GET(request: Request) {
   try {
     const user = await requireRequestUser();
+    const supabase = await createSupabaseServerClient();
 
     const allowed = rateLimit(
       `categories:list:${user.id}`,
@@ -53,7 +54,7 @@ export async function GET(request: Request) {
     const offset = (page - 1) * limit;
     const isAdmin = user.role === 'admin';
 
-    let query = supabaseServer
+    let query = supabase
       .from('categories')
       .select('*', { count: 'exact' })
       .order('name', { ascending: true })
@@ -99,6 +100,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const user = await requireRequestUser();
+    const supabase = await createSupabaseServerClient();
 
     const allowed = rateLimit(
       `categories:create:${user.id}`,
@@ -146,7 +148,7 @@ export async function POST(request: Request) {
       is_active: validation.data.is_active ?? true,
     };
 
-    const { data, error } = await supabaseServer
+    const { data, error } = await supabase
       .from('categories')
       .insert(insertPayload as never)
       .select('*')
@@ -178,7 +180,7 @@ export async function POST(request: Request) {
       );
     }
 
-    await supabaseServer.from('audit_log').insert(
+    await supabase.from('audit_log').insert(
       {
         user_id: user.id,
         action: 'CREATE',

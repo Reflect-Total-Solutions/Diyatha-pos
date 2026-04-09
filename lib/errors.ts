@@ -210,6 +210,31 @@ export function toApiError(error: unknown): ApiErrorBase {
   if (error instanceof ApiErrorBase) {
     return error;
   }
+
+  if (typeof error === 'object' && error !== null) {
+    const record = error as Record<string, unknown>;
+    const message = typeof record.message === 'string' ? record.message : 'Database operation failed';
+    const statusCandidate =
+      typeof record.status === 'number'
+        ? record.status
+        : typeof record.statusCode === 'number'
+          ? record.statusCode
+          : null;
+
+    const statusCode =
+      statusCandidate && statusCandidate >= 400 && statusCandidate <= 599
+        ? statusCandidate
+        : HTTP_STATUS.SERVER_ERROR;
+
+    const code = typeof record.code === 'string' ? record.code : ERROR_CODES.DATABASE_ERROR;
+
+    return new ApiErrorBase(message, statusCode, code, {
+      details: record.details,
+      hint: record.hint,
+      raw: record,
+    });
+  }
+
   if (error instanceof Error) {
     return new ApiErrorBase(
       error.message,

@@ -1,5 +1,5 @@
 import { UnauthorizedError } from '@/lib/errors';
-import { createSupabaseServerClient, supabaseServer } from '@/lib/supabase-server';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
 import type { UserRole } from '@/types/user';
 
 export type RequestUserContext = {
@@ -20,7 +20,7 @@ export async function requireRequestUser(): Promise<RequestUserContext> {
     throw new UnauthorizedError('Unauthorized');
   }
 
-  const { data: userProfile } = await supabaseServer
+  const { data: userProfile } = await supabase
     .from('users')
     .select('*')
     .eq('id', user.id)

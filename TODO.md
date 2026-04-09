@@ -1,6 +1,6 @@
 # 🎪 Carnival POS System - Implementation TODO
 
-**Status**: Phase 4 - 40% Complete (4 of 10 tasks)
+**Status**: Phase 6 - 63% Complete (5 of 8 tasks)
 **Last Updated**: 2026-04-09
 **Total Tasks**: 104 across 13 phases
 
@@ -30,7 +30,32 @@
 
 ---
 
-## ⏳ IN PROGRESS IN PHASE 4
+## ⏳ IN PROGRESS IN PHASE 6
+
+- ✅ 6.1 POS main dashboard page implemented at /dashboard
+- ✅ 6.2 PricingToggle component created and wired to price mode store
+- ✅ 6.3 PaymentConfirmation popup created and wired to transaction flow
+- ✅ 6.4 Transaction history view created with search and cancellation actions
+- ✅ 6.5 Daily summary display created with counts and totals
+
+**Validation**: npm run lint ✅ | npm run build ✅
+
+---
+
+## ⏳ PARTIALLY COMPLETE IN PHASE 5
+
+- ✅ 5.1 Transaction group endpoint created: /api/transaction-groups (create/list/finalize)
+- ✅ 5.2 Transaction endpoint created: /api/transactions (create/list)
+- ✅ 5.3 Token generation & sequencing implemented in transaction creation flow
+- ✅ 5.4 Transaction search/listing endpoints created: /api/transactions/search and /api/transactions
+- ✅ 5.5 Cancellation logic implemented via PATCH /api/transactions/[id] (sets cancelled_at)
+- ✅ 5.6 useTransactions hook created with group, create, cancel, and search helpers
+
+**Validation**: npm run lint ✅ | npm run build ✅
+
+---
+
+## ⏳ PARTIALLY COMPLETE IN PHASE 4
 
 - ✅ 4.1 Activity API routes created: /api/activities and /api/activities/[id]
 - ✅ 4.2 Category API routes created: /api/categories and /api/categories/[id]
@@ -126,14 +151,14 @@
 
 | # | Task | Status | Complexity |
 |---|------|--------|-----------|
-| 5.1 | Create transaction group management endpoint | ⏹️ | MEDIUM |
-| 5.2 | Create transaction creation endpoint (POST /api/transactions) | ⏹️ | HIGH |
-| 5.3 | Implement token generation & sequencing logic | ⏹️ | HIGH |
-| 5.4 | Create transaction search/listing endpoints | ⏹️ | MEDIUM |
-| 5.5 | Implement cancellation logic (mark cancelled_at) | ⏹️ | LOW |
-| 5.6 | Create useTransactions hook | ⏹️ | MEDIUM |
+| 5.1 | Create transaction group management endpoint | ✅ | MEDIUM |
+| 5.2 | Create transaction creation endpoint (POST /api/transactions) | ✅ | HIGH |
+| 5.3 | Implement token generation & sequencing logic | ✅ | HIGH |
+| 5.4 | Create transaction search/listing endpoints | ✅ | MEDIUM |
+| 5.5 | Implement cancellation logic (mark cancelled_at) | ✅ | LOW |
+| 5.6 | Create useTransactions hook | ✅ | MEDIUM |
 
-**Phase 5 Total**: 12 tasks | 0 complete | 0%
+**Phase 5 Total**: 12 tasks | 6 complete | 50%
 
 ---
 
@@ -141,13 +166,13 @@
 
 | # | Task | Status | Complexity |
 |---|------|--------|-----------|
-| 6.1 | Create POS main dashboard page | ⏹️ | MEDIUM |
-| 6.2 | Create PricingToggle component (Local/Foreign toggle) | ⏹️ | LOW |
-| 6.3 | Create PaymentConfirmation popup | ⏹️ | LOW |
-| 6.4 | Create transaction history view | ⏹️ | LOW |
-| 6.5 | Create daily summary display | ⏹️ | MEDIUM |
+| 6.1 | Create POS main dashboard page | ✅ | MEDIUM |
+| 6.2 | Create PricingToggle component (Local/Foreign toggle) | ✅ | LOW |
+| 6.3 | Create PaymentConfirmation popup | ✅ | LOW |
+| 6.4 | Create transaction history view | ✅ | LOW |
+| 6.5 | Create daily summary display | ✅ | MEDIUM |
 
-**Phase 6 Total**: 8 tasks | 0 complete | 0%
+**Phase 6 Total**: 8 tasks | 5 complete | 63%
 
 ---
 
@@ -270,8 +295,8 @@ Phase 13 (Deployment)
 | 2 | ⏳ | 8 | 4 | 50% |
 | 3 | ⏳ | 6 | 4 | 67% |
 | 4 | ⏳ | 10 | 4 | 40% |
-| 5 | ⏹️ | 12 | 0 | 0% |
-| 6 | ⏹️ | 8 | 0 | 0% |
+| 5 | ⏳ | 12 | 6 | 50% |
+| 6 | ⏳ | 8 | 5 | 63% |
 | 7 | ⏹️ | 10 | 0 | 0% |
 | 8 | ⏹️ | 6 | 0 | 0% |
 | 9 | ⏹️ | 5 | 0 | 0% |
@@ -279,7 +304,7 @@ Phase 13 (Deployment)
 | 11 | ⏹️ | 7 | 0 | 0% |
 | 12 | ⏹️ | 8 | 0 | 0% |
 | 13 | ⏹️ | 6 | 0 | 0% |
-| **TOTAL** | | **104** | **23** | **22%** |
+| **TOTAL** | | **104** | **34** | **33%** |
 
 ---
 

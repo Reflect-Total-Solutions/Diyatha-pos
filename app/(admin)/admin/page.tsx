@@ -1,7 +1,16 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { 
+  Users, 
+  Activity, 
+  FolderTree, 
+  LineChart, 
+  Printer, 
+  AlertCircle,
+  RefreshCcw,
+  CheckCircle2
+} from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 
@@ -62,98 +71,189 @@ export default function AdminDashboardPage() {
   }, []);
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8">
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Phase 10</p>
-            <h1 className="mt-1 text-2xl font-semibold text-slate-900">Admin Dashboard</h1>
-            <p className="mt-1 text-sm text-slate-600">
-              Operations snapshot, maintenance status, and quick admin navigation.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Link
-              href="/logout"
-              className="inline-flex h-9 items-center justify-center rounded-lg border border-slate-300 px-3 text-sm font-medium text-slate-700 hover:bg-slate-100"
-            >
-              Sign Out
-            </Link>
-            <Button type="button" variant="outline" onClick={() => void loadData()} disabled={isLoading}>
-              Refresh
-            </Button>
-          </div>
-        </div>
-
-        {error ? (
-          <p className="mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-            {error}
+    <div className="max-w-[1200px]">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between px-1">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Dashboard</h1>
+          <p className="mt-1.5 text-sm text-slate-500">
+            System overview, statistics, and operational health status
           </p>
-        ) : null}
-
-        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Link href="/admin/users" className="rounded-xl border border-slate-200 bg-slate-50 p-4 hover:bg-slate-100">
-            <p className="text-sm font-semibold text-slate-900">Users</p>
-            <p className="mt-1 text-xs text-slate-600">Manage admin and cashier accounts</p>
-          </Link>
-          <Link href="/admin/activities" className="rounded-xl border border-slate-200 bg-slate-50 p-4 hover:bg-slate-100">
-            <p className="text-sm font-semibold text-slate-900">Activities</p>
-            <p className="mt-1 text-xs text-slate-600">Create and update activity catalog</p>
-          </Link>
-          <Link href="/admin/categories" className="rounded-xl border border-slate-200 bg-slate-50 p-4 hover:bg-slate-100">
-            <p className="text-sm font-semibold text-slate-900">Categories</p>
-            <p className="mt-1 text-xs text-slate-600">Maintain category taxonomy</p>
-          </Link>
-          <Link href="/admin/pricing" className="rounded-xl border border-slate-200 bg-slate-50 p-4 hover:bg-slate-100">
-            <p className="text-sm font-semibold text-slate-900">Pricing</p>
-            <p className="mt-1 text-xs text-slate-600">Adjust local and foreign prices</p>
-          </Link>
-          <Link href="/admin/reports" className="rounded-xl border border-slate-200 bg-slate-50 p-4 hover:bg-slate-100">
-            <p className="text-sm font-semibold text-slate-900">Reports</p>
-            <p className="mt-1 text-xs text-slate-600">Daily, activity, cashier, and transactions</p>
-          </Link>
-          <Link href="/admin/audit-log" className="rounded-xl border border-slate-200 bg-slate-50 p-4 hover:bg-slate-100">
-            <p className="text-sm font-semibold text-slate-900">Audit Log</p>
-            <p className="mt-1 text-xs text-slate-600">Security and operation history</p>
-          </Link>
-          <Link href="/admin/maintenance" className="rounded-xl border border-slate-200 bg-slate-50 p-4 hover:bg-slate-100">
-            <p className="text-sm font-semibold text-slate-900">Maintenance</p>
-            <p className="mt-1 text-xs text-slate-600">Health checks and recent errors</p>
-          </Link>
-          <Link href="/dashboard" className="rounded-xl border border-slate-200 bg-slate-50 p-4 hover:bg-slate-100">
-            <p className="text-sm font-semibold text-slate-900">POS Dashboard</p>
-            <p className="mt-1 text-xs text-slate-600">Return to cashier operations</p>
-          </Link>
         </div>
 
-        <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-xl border border-slate-200 p-4">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Users</p>
-            <p className="mt-2 text-2xl font-semibold text-slate-900">{data?.counts.users ?? '-'}</p>
-            <p className="text-xs text-slate-500">Active: {data?.counts.active_users ?? '-'}</p>
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={() => void loadData()} 
+          disabled={isLoading}
+          className="h-10 px-4 font-medium shadow-sm bg-white hover:bg-slate-50 transition-colors"
+        >
+          <RefreshCcw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin opacity-50' : 'text-slate-500'}`} strokeWidth={2.5}/>
+          {isLoading ? 'Refreshing...' : 'Refresh Data'}
+        </Button>
+      </div>
+
+      {error ? (
+        <div className="mb-6 rounded-xl border border-red-200 bg-red-50/50 p-4 text-sm font-medium text-red-800 flex items-center shadow-sm">
+          <AlertCircle className="w-5 h-5 mr-3 text-red-500 shrink-0" />
+          {error}
+        </div>
+      ) : null}
+
+      {/* Statistics Grid */}
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+        {/* Users Card */}
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-200 group">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Users</p>
+              <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900 group-hover:text-blue-600 transition-colors">{data?.counts.users ?? '—'}</p>
+              <p className="mt-1 text-sm text-slate-500 flex items-center gap-1.5">
+                Active: <span className="font-semibold text-slate-700">{data?.counts.active_users ?? '—'}</span>
+              </p>
+            </div>
+            <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl group-hover:bg-blue-100 group-hover:text-blue-700 transition-colors">
+              <Users className="w-5 h-5" strokeWidth={2.5} />
+            </div>
           </div>
-          <div className="rounded-xl border border-slate-200 p-4">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Activities</p>
-            <p className="mt-2 text-2xl font-semibold text-slate-900">{data?.counts.activities ?? '-'}</p>
-            <p className="text-xs text-slate-500">Active: {data?.counts.active_activities ?? '-'}</p>
+        </div>
+
+        {/* Activities Card */}
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-200 group">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Activities</p>
+              <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900 group-hover:text-emerald-600 transition-colors">{data?.counts.activities ?? '—'}</p>
+              <p className="mt-1 text-sm text-slate-500 flex items-center gap-1.5">
+                Active: <span className="font-semibold text-slate-700">{data?.counts.active_activities ?? '—'}</span>
+              </p>
+            </div>
+            <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl group-hover:bg-emerald-100 group-hover:text-emerald-700 transition-colors">
+              <Activity className="w-5 h-5" strokeWidth={2.5} />
+            </div>
           </div>
-          <div className="rounded-xl border border-slate-200 p-4">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Transactions Today</p>
-            <p className="mt-2 text-2xl font-semibold text-slate-900">{data?.counts.todays_transactions ?? '-'}</p>
-            <p className="text-xs text-slate-500">Pending prints: {data?.counts.pending_prints ?? '-'}</p>
+        </div>
+
+        {/* Categories Card */}
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-200 group">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Categories</p>
+              <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900 group-hover:text-amber-600 transition-colors">{data?.counts.categories ?? '—'}</p>
+              <p className="mt-1 text-sm text-slate-500">Total items</p>
+            </div>
+            <div className="p-2.5 bg-amber-50 text-amber-600 rounded-xl group-hover:bg-amber-100 group-hover:text-amber-700 transition-colors">
+              <FolderTree className="w-5 h-5" strokeWidth={2.5} />
+            </div>
           </div>
-          <div className="rounded-xl border border-slate-200 p-4">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Printer</p>
-            <p className="mt-2 text-2xl font-semibold text-slate-900">
+        </div>
+
+        {/* Transactions Card */}
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-200 group">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Today&apos;s Sales</p>
+              <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900 group-hover:text-violet-600 transition-colors">{data?.counts.todays_transactions ?? '—'}</p>
+              <p className="mt-1 text-sm text-slate-500 flex items-center gap-1.5">
+                Pending: <span className="font-semibold text-slate-700">{data?.counts.pending_prints ?? '—'}</span>
+              </p>
+            </div>
+            <div className="p-2.5 bg-violet-50 text-violet-600 rounded-xl group-hover:bg-violet-100 group-hover:text-violet-700 transition-colors">
+              <LineChart className="w-5 h-5" strokeWidth={2.5} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Printer & Errors Section */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 lg:gap-8">
+        {/* Printer Status Card */}
+        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm flex flex-col">
+          <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-slate-100 text-slate-600 rounded-xl">
+                <Printer className="w-5 h-5" strokeWidth={2.5} />
+              </div>
+              <h2 className="text-base font-bold text-slate-900">Printer Status</h2>
+            </div>
+            <div className={`px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full ${
+              data?.printer.online 
+                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                : 'bg-red-50 text-red-700 border border-red-200'
+            }`}>
               {data?.printer.online ? 'Online' : 'Offline'}
-            </p>
-            <p className="text-xs text-slate-500">
-              {data?.printer.ip ? `${data.printer.ip}:${data.printer.port}` : 'No target found'}
-            </p>
+            </div>
+          </div>
+          
+          <div className="p-6 flex-1 bg-slate-50/50 rounded-b-2xl">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-1.5">Network Address</p>
+                <p className="text-sm font-medium text-slate-900">
+                  {data?.printer.ip ? `${data.printer.ip}:${data.printer.port}` : 'Not configured'}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-1.5">Response Time</p>
+                <p className="text-sm font-medium text-slate-900">
+                  {data?.printer.response_time ? `${data.printer.response_time}ms` : '—'}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
-      </section>
-    </main>
+
+        {/* Recent Errors Card */}
+        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm flex flex-col">
+          <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-slate-100 text-slate-600 rounded-xl">
+                <AlertCircle className="w-5 h-5" strokeWidth={2.5} />
+              </div>
+              <h2 className="text-base font-bold text-slate-900">System Alerts</h2>
+            </div>
+            <div className="px-3 py-1 bg-slate-100 text-slate-600 text-xs font-bold rounded-full">
+              {data?.recent_errors.length ?? 0}
+            </div>
+          </div>
+
+          <div className="p-6 flex-1 rounded-b-2xl">
+            {data?.recent_errors && data.recent_errors.length > 0 ? (
+              <div className="space-y-3">
+                {data.recent_errors.slice(0, 4).map((err) => (
+                  <div key={err.id} className="flex gap-4 p-3 rounded-xl border border-slate-100 bg-slate-50/50">
+                    <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-slate-800 line-clamp-2 leading-relaxed">{err.message}</p>
+                      <p className="mt-1.5 text-xs text-slate-500 font-medium">
+                        {new Date(err.created_at).toLocaleString('en-LK', {
+                          month: 'short', day: 'numeric',
+                          hour: '2-digit', minute: '2-digit',
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center py-6 text-center">
+                <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center mb-3">
+                  <CheckCircle2 className="w-6 h-6" strokeWidth={2.5} />
+                </div>
+                <p className="text-sm font-semibold tracking-tight text-slate-900 mb-1">All systems nominal</p>
+                <p className="text-xs font-medium text-slate-500">No recent errors detected</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-8 text-center sm:text-right">
+        {data?.refreshed_at && (
+          <p className="text-[11px] font-medium uppercase tracking-widest text-slate-400">
+            Last updated • {new Date(data.refreshed_at).toLocaleTimeString('en-LK')}
+          </p>
+        )}
+      </div>
+    </div>
   );
 }

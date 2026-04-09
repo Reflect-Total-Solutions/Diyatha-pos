@@ -105,6 +105,18 @@ create policy "admin_read_all_transaction_groups"
   for select
   using (auth.jwt() ->> 'role' = 'admin');
 
+create policy "cashier_update_own_transaction_groups"
+  on public.transaction_groups
+  for update
+  using (cashier_id = auth.uid())
+  with check (cashier_id = auth.uid());
+
+create policy "admin_update_all_transaction_groups"
+  on public.transaction_groups
+  for update
+  using (auth.jwt() ->> 'role' = 'admin')
+  with check (auth.jwt() ->> 'role' = 'admin');
+
 -- Transactions
 create policy "cashier_read_own_transactions"
   on public.transactions
@@ -120,6 +132,18 @@ create policy "admin_read_all_transactions"
   on public.transactions
   for select
   using (auth.jwt() ->> 'role' = 'admin');
+
+create policy "cashier_update_own_transactions"
+  on public.transactions
+  for update
+  using (cashier_id = auth.uid())
+  with check (cashier_id = auth.uid());
+
+create policy "admin_update_all_transactions"
+  on public.transactions
+  for update
+  using (auth.jwt() ->> 'role' = 'admin')
+  with check (auth.jwt() ->> 'role' = 'admin');
 
 -- Tokens
 create policy "cashier_read_own_tokens"

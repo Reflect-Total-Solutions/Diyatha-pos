@@ -1,44 +1,7 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-const ACCESS_TOKEN_COOKIE_NAMES = [
-  'pc_access_token',
-  'access_token',
-  'sb-access-token',
-  'sb:token',
-] as const;
-
-function getAccessToken(request: NextRequest): string | null {
-  for (const cookieName of ACCESS_TOKEN_COOKIE_NAMES) {
-    const token = request.cookies.get(cookieName)?.value;
-    if (token) return token;
-  }
-
-  return null;
-}
-
-function decodeJwtRole(token: string | null): string | null {
-  if (!token) return null;
-
-  const segments = token.split('.');
-  if (segments.length !== 3) return null;
-
-  try {
-    const base64Payload = segments[1]
-      .replace(/-/g, '+')
-      .replace(/_/g, '/');
-    const padding = '='.repeat((4 - (base64Payload.length % 4)) % 4);
-    const decodedPayload = atob(base64Payload + padding);
-    const payload = JSON.parse(decodedPayload) as {
-      app_metadata?: { role?: string };
-      user_metadata?: { role?: string };
-    };
-
-    return payload.app_metadata?.role ?? payload.user_metadata?.role ?? null;
-  } catch {
-    return null;
-  }
-}
+import { createClient } from '@/utils/supabase/middleware';
 
 function isApiRequest(pathname: string): boolean {
   return pathname.startsWith('/api/');
@@ -59,16 +22,15 @@ function needsAdmin(pathname: string): boolean {
   return pathname.startsWith('/admin') || pathname.startsWith('/api/admin');
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
+  const { response: supabaseResponse, user } = await createClient(request);
   const { pathname } = request.nextUrl;
 
   if (!needsAuth(pathname)) {
-    return NextResponse.next();
+    return supabaseResponse;
   }
 
-  const token = getAccessToken(request);
-
-  if (!token) {
+  if (!user) {
     if (isApiRequest(pathname)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -78,7 +40,9 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (needsAdmin(pathname) && decodeJwtRole(token) !== 'admin') {
+  const role = user.app_metadata?.role ?? user.user_metadata?.role;
+
+  if (needsAdmin(pathname) && role !== 'admin') {
     if (isApiRequest(pathname)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
@@ -86,7 +50,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  return NextResponse.next();
+  return supabaseResponse;
 }
 
 export const config = {

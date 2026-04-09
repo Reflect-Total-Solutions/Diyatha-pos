@@ -18,12 +18,12 @@ type PaymentConfirmationProps = {
   items: Array<{
     activity: Activity;
     quantity: number;
+    priceType: PriceType;
   }>;
-  priceType: PriceType;
   isSubmitting?: boolean;
   error?: string | null;
-  onQuantityChange: (activityId: string, quantity: number) => void;
-  onRemoveItem: (activityId: string) => void;
+  onQuantityChange: (activityId: string, priceType: PriceType, quantity: number) => void;
+  onRemoveItem: (activityId: string, priceType: PriceType) => void;
   onCancel: () => void;
   onConfirm: () => void;
 };
@@ -31,7 +31,6 @@ type PaymentConfirmationProps = {
 export default function PaymentConfirmation({
   open,
   items,
-  priceType,
   isSubmitting = false,
   error = null,
   onQuantityChange,
@@ -44,7 +43,7 @@ export default function PaymentConfirmation({
   }
 
   const totalAmount = items.reduce((sum, item) => {
-    const unitAmount = priceType === 'local' ? item.activity.local_price : item.activity.foreign_price;
+    const unitAmount = item.priceType === 'local' ? item.activity.local_price : item.activity.foreign_price;
     return sum + unitAmount * Math.max(1, item.quantity);
   }, 0);
 
@@ -72,12 +71,19 @@ export default function PaymentConfirmation({
             <tbody className="divide-y divide-slate-100 bg-white">
               {items.map((item) => {
                 const unitAmount =
-                  priceType === 'local' ? item.activity.local_price : item.activity.foreign_price;
+                  item.priceType === 'local' ? item.activity.local_price : item.activity.foreign_price;
                 const lineTotal = unitAmount * Math.max(1, item.quantity);
 
                 return (
-                  <tr key={item.activity.id}>
-                    <td className="px-3 py-2 text-slate-900">{item.activity.name}</td>
+                  <tr key={`${item.activity.id}-${item.priceType}`}>
+                    <td className="px-3 py-2 text-slate-900">
+                      <div className="flex items-center gap-2">
+                        <span>{item.activity.name}</span>
+                        <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-slate-600">
+                          {item.priceType}
+                        </span>
+                      </div>
+                    </td>
                     <td className="px-3 py-2 text-right text-slate-800">{formatCurrency(unitAmount)}</td>
                     <td className="px-3 py-2 text-right">
                       <input
@@ -91,6 +97,7 @@ export default function PaymentConfirmation({
                           const parsed = Number.parseInt(event.target.value, 10);
                           onQuantityChange(
                             item.activity.id,
+                            item.priceType,
                             Number.isFinite(parsed) ? Math.max(1, parsed) : 1
                           );
                         }}
@@ -102,7 +109,7 @@ export default function PaymentConfirmation({
                       <button
                         type="button"
                         disabled={isSubmitting}
-                        onClick={() => onRemoveItem(item.activity.id)}
+                        onClick={() => onRemoveItem(item.activity.id, item.priceType)}
                         className="inline-flex h-8 items-center justify-center rounded-md border border-slate-300 px-2 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
                       >
                         Remove
@@ -114,13 +121,12 @@ export default function PaymentConfirmation({
             </tbody>
           </table>
 
-          <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-3 py-3 text-sm">
-            <div className="text-slate-700">
-              <span className="font-medium">Price Type:</span>{' '}
-              <span className="uppercase">{priceType}</span>
-              <span className="ml-3 font-medium">Tickets:</span> {totalTickets}
+          <div className="flex items-center gap-4 border-t border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-700">
+            <div>
+              <span className="font-medium">Selected Tickets:</span>{' '}
+              {totalTickets}
             </div>
-            <div className="text-lg font-semibold text-slate-900">{formatCurrency(totalAmount)}</div>
+            <div className="ml-auto text-lg font-semibold text-slate-900">{formatCurrency(totalAmount)}</div>
           </div>
         </div>
 

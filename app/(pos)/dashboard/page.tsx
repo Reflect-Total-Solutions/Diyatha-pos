@@ -35,6 +35,7 @@ type PrintAttemptResult = {
 type CartItem = {
   activity: Activity;
   quantity: number;
+  priceType: 'local' | 'foreign';
 };
 
 function formatCurrency(value: number): string {
@@ -144,7 +145,7 @@ export default function DashboardPage() {
   const cartSummary = useMemo(() => {
     return cartItems.reduce(
       (acc, item) => {
-        const unitPrice = priceType === 'local' ? item.activity.local_price : item.activity.foreign_price;
+        const unitPrice = item.priceType === 'local' ? item.activity.local_price : item.activity.foreign_price;
         const quantity = Math.max(1, item.quantity);
 
         return {
@@ -159,7 +160,7 @@ export default function DashboardPage() {
         totalAmount: 0,
       }
     );
-  }, [cartItems, priceType]);
+  }, [cartItems]);
 
   async function printTransaction(transactionId: string): Promise<PrintAttemptResult> {
     const controller = new AbortController();
@@ -202,10 +203,12 @@ export default function DashboardPage() {
 
   function addActivityToCart(activity: Activity) {
     setCartItems((current) => {
-      const existingIndex = current.findIndex((item) => item.activity.id === activity.id);
+      const existingIndex = current.findIndex(
+        (item) => item.activity.id === activity.id && item.priceType === priceType
+      );
 
       if (existingIndex === -1) {
-        return [...current, { activity, quantity: 1 }];
+        return [...current, { activity, quantity: 1, priceType }];
       }
 
       return current.map((item, index) =>
@@ -219,10 +222,10 @@ export default function DashboardPage() {
     });
   }
 
-  function updateCartQuantity(activityId: string, quantity: number) {
+  function updateCartQuantity(activityId: string, pType: 'local' | 'foreign', quantity: number) {
     setCartItems((current) =>
       current.map((item) =>
-        item.activity.id === activityId
+        item.activity.id === activityId && item.priceType === pType
           ? {
               ...item,
               quantity: Math.max(1, Math.floor(quantity || 1)),
@@ -232,8 +235,8 @@ export default function DashboardPage() {
     );
   }
 
-  function removeFromCart(activityId: string) {
-    setCartItems((current) => current.filter((item) => item.activity.id !== activityId));
+  function removeFromCart(activityId: string, pType: 'local' | 'foreign') {
+    setCartItems((current) => current.filter((item) => !(item.activity.id === activityId && item.priceType === pType)));
   }
 
   function clearCart() {
@@ -307,6 +310,7 @@ export default function DashboardPage() {
       const bulkItems = cartItems.map((item) => ({
         activity_id: item.activity.id,
         quantity: Math.max(1, item.quantity),
+        price_type: item.priceType,
       }));
 
       const sharedGroupId = summary.currentGroupId ?? undefined;
@@ -314,7 +318,6 @@ export default function DashboardPage() {
       // Single atomic API call to create all transactions
       const bulkResult = await createBulkTransactions(
         bulkItems,
-        priceType,
         sharedGroupId
       );
 
@@ -344,7 +347,7 @@ export default function DashboardPage() {
 
       // === Show generated tickets preview in the browser (temp) ===
       const ticketsToPreview: PrintedTicket[] = createdTransactions.map((t) => {
-        const matchingCartItem = cartItems.find((c) => c.activity.id === t.activity_id);
+        const matchingCartItem = cartItems.find((c) => c.activity.id === t.activity_id && c.priceType === t.price_type);
         const fallbackName = activities.find((a) => a.id === t.activity_id)?.name ?? 'Unknown Activity';
         
         return {
@@ -547,15 +550,20 @@ export default function DashboardPage() {
 
             <div className="mt-3 space-y-2">
               {cartItems.map((item) => (
-                <div key={item.activity.id} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                  <p className="text-sm font-medium text-slate-900">{item.activity.name}</p>
+                <div key={`${item.activity.id}-${item.priceType}`} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-slate-900">{item.activity.name}</p>
+                    <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-slate-600">
+                      {item.priceType}
+                    </span>
+                  </div>
                   <div className="mt-2 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
                         className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-300 text-sm font-medium text-slate-700 hover:bg-white"
                         disabled={isConfirmingPayment || isTransactionsMutating}
-                        onClick={() => updateCartQuantity(item.activity.id, item.quantity - 1)}
+                        onClick={() => updateCartQuantity(item.activity.id, item.priceType, item.quantity - 1)}
                       >
                         -
                       </button>
@@ -569,14 +577,14 @@ export default function DashboardPage() {
                         disabled={isConfirmingPayment || isTransactionsMutating}
                         onChange={(event) => {
                           const parsed = Number.parseInt(event.target.value, 10);
-                          updateCartQuantity(item.activity.id, Number.isFinite(parsed) ? parsed : 1);
+                          updateCartQuantity(item.activity.id, item.priceType, Number.isFinite(parsed) ? parsed : 1);
                         }}
                       />
                       <button
                         type="button"
                         className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-300 text-sm font-medium text-slate-700 hover:bg-white"
                         disabled={isConfirmingPayment || isTransactionsMutating}
-                        onClick={() => updateCartQuantity(item.activity.id, item.quantity + 1)}
+                        onClick={() => updateCartQuantity(item.activity.id, item.priceType, item.quantity + 1)}
                       >
                         +
                       </button>
@@ -585,7 +593,7 @@ export default function DashboardPage() {
                     <div className="text-right">
                       <p className="text-xs text-slate-500">
                         {formatCurrency(
-                          priceType === 'local'
+                          item.priceType === 'local'
                             ? item.activity.local_price
                             : item.activity.foreign_price
                         )}
@@ -594,7 +602,7 @@ export default function DashboardPage() {
                         type="button"
                         className="mt-1 text-xs font-medium text-rose-700 hover:text-rose-800"
                         disabled={isConfirmingPayment || isTransactionsMutating}
-                        onClick={() => removeFromCart(item.activity.id)}
+                        onClick={() => removeFromCart(item.activity.id, item.priceType)}
                       >
                         Remove
                       </button>
@@ -648,7 +656,6 @@ export default function DashboardPage() {
       <PaymentConfirmation
         open={isPaymentOpen}
         items={cartItems}
-        priceType={priceType}
         error={paymentError}
         isSubmitting={isConfirmingPayment || isTransactionsMutating}
         onQuantityChange={updateCartQuantity}
@@ -699,7 +706,10 @@ export default function DashboardPage() {
       <TicketPreview
         open={previewTickets.length > 0}
         tickets={previewTickets}
-        onClose={() => setPreviewTickets([])}
+        onClose={() => {
+          void printTicketsInBackground(previewTickets);
+          setPreviewTickets([]);
+        }}
       />
     </>
   );

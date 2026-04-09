@@ -58,6 +58,7 @@ export type CreateTransactionInput = {
 export type BulkTransactionItem = {
   activity_id: string;
   quantity: number;
+  price_type: PriceType;
 };
 
 export type BulkTransactionResult = {
@@ -315,7 +316,6 @@ export function useTransactions(options: UseTransactionsOptions = {}) {
 
   const createBulkTransactions = useCallback(async (
     items: BulkTransactionItem[],
-    priceType: PriceType,
     groupId?: string
   ): Promise<MutationResult<BulkTransactionResult>> => {
     setIsMutating(true);
@@ -331,7 +331,6 @@ export function useTransactions(options: UseTransactionsOptions = {}) {
         },
         body: JSON.stringify({
           transaction_group_id: targetGroupId,
-          price_type: priceType,
           items,
         }),
       });

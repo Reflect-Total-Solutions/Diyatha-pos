@@ -57,7 +57,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { items, price_type, transaction_group_id } = validation.data;
+    const { items, transaction_group_id } = validation.data;
 
     // Collect all unique activity IDs
     const activityIds = [...new Set(items.map((item) => item.activity_id))];
@@ -178,15 +178,15 @@ export async function POST(request: Request) {
     }
 
     // Expand items into individual ticket entries
-    // e.g. [{activity_id: A, quantity: 2}, {activity_id: B, quantity: 3}] -> 5 entries
-    const expandedTickets: Array<{ activity: ActivityRow; priceType: typeof price_type }> = [];
+    // e.g. [{activity_id: A, quantity: 2, price_type: 'local'}] -> 2 entries
+    const expandedTickets: Array<{ activity: ActivityRow; priceType: 'local' | 'foreign' }> = [];
 
     for (const item of items) {
       const activity = activityMap.get(item.activity_id)!;
       const qty = Math.max(1, item.quantity);
 
       for (let i = 0; i < qty; i++) {
-        expandedTickets.push({ activity, priceType: price_type });
+        expandedTickets.push({ activity, priceType: item.price_type });
       }
     }
 

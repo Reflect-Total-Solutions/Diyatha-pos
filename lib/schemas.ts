@@ -81,12 +81,12 @@ export type TransactionInput = z.infer<typeof TransactionSchema>;
 
 export const BulkTransactionSchema = z.object({
   transaction_group_id: z.string().uuid('Invalid group ID').optional(),
-  price_type: z.enum(['local', 'foreign']).describe('Price type must be "local" or "foreign"'),
   items: z
     .array(
       z.object({
         activity_id: z.string().uuid('Invalid activity ID'),
         quantity: z.number().int().min(1, 'Quantity must be at least 1').max(50, 'Maximum 50 tickets per activity'),
+        price_type: z.enum(['local', 'foreign']).describe('Price type must be "local" or "foreign"'),
       })
     )
     .min(1, 'At least one item is required')

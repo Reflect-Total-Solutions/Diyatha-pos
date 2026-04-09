@@ -55,6 +55,18 @@ export type CreateTransactionInput = {
   transaction_group_id?: string;
 };
 
+export type BulkTransactionItem = {
+  activity_id: string;
+  quantity: number;
+};
+
+export type BulkTransactionResult = {
+  transaction_group_id: string;
+  transactions: TransactionWithToken[];
+  transaction_count: number;
+  total_amount: number;
+};
+
 export type TransactionSearchInput = {
   q?: string;
   token?: string;
@@ -238,7 +250,8 @@ export function useTransactions(options: UseTransactionsOptions = {}) {
     setIsMutating(true);
 
     try {
-      let targetGroupId = input.transaction_group_id ?? currentGroupId;
+      const latestGroupId = useTransactionGroupStore.getState().currentGroupId;
+      let targetGroupId = input.transaction_group_id ?? latestGroupId ?? currentGroupId;
 
       if (!targetGroupId) {
         const groupResult = await startGroup();
@@ -286,8 +299,6 @@ export function useTransactions(options: UseTransactionsOptions = {}) {
         });
       }
 
-      await loadTransactions();
-
       return {
         success: true,
         data: payload.data,
@@ -300,7 +311,65 @@ export function useTransactions(options: UseTransactionsOptions = {}) {
     } finally {
       setIsMutating(false);
     }
-  }, [currentGroupId, groupTotalAmount, loadTransactions, setFromServer, startGroup, transactionCount]);
+  }, [currentGroupId, groupTotalAmount, setFromServer, startGroup, transactionCount]);
+
+  const createBulkTransactions = useCallback(async (
+    items: BulkTransactionItem[],
+    priceType: PriceType,
+    groupId?: string
+  ): Promise<MutationResult<BulkTransactionResult>> => {
+    setIsMutating(true);
+
+    try {
+      const latestGroupId = useTransactionGroupStore.getState().currentGroupId;
+      const targetGroupId = groupId ?? latestGroupId ?? currentGroupId ?? undefined;
+
+      const response = await fetch('/api/transactions/bulk', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          transaction_group_id: targetGroupId,
+          price_type: priceType,
+          items,
+        }),
+      });
+
+      const payload = (await response.json()) as SingleApiResponse<BulkTransactionResult>;
+
+      if (!response.ok || !payload.data) {
+        return {
+          success: false,
+          error: payload.error ?? 'Failed to create transactions',
+        };
+      }
+
+      // Update the group store with the real server values
+      setFromServer({
+        id: payload.data.transaction_group_id,
+        transaction_count: payload.data.transaction_count,
+        total_amount: payload.data.total_amount,
+      });
+
+      // If no group existed before, also trigger startNewGroup for UI
+      if (!targetGroupId) {
+        startNewGroup(payload.data.transaction_group_id);
+      }
+
+      return {
+        success: true,
+        data: payload.data,
+      };
+    } catch {
+      return {
+        success: false,
+        error: 'Failed to create transactions',
+      };
+    } finally {
+      setIsMutating(false);
+    }
+  }, [currentGroupId, setFromServer, startNewGroup]);
 
   const cancelTransaction = useCallback(async (
     transactionId: string,
@@ -424,6 +493,7 @@ export function useTransactions(options: UseTransactionsOptions = {}) {
     startGroup,
     endCurrentGroup,
     createTransaction,
+    createBulkTransactions,
     cancelTransaction,
     searchTransactions,
   };

@@ -23,7 +23,7 @@ function needsAdmin(pathname: string): boolean {
 }
 
 export async function middleware(request: NextRequest) {
-  const { response: supabaseResponse, user } = await createClient(request);
+  const { response: supabaseResponse, user, userRole } = await createClient(request);
   const { pathname } = request.nextUrl;
 
   if (!needsAuth(pathname)) {
@@ -40,7 +40,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  const role = user.app_metadata?.role ?? user.user_metadata?.role;
+  const role = userRole ?? user.app_metadata?.role ?? user.user_metadata?.role;
 
   if (needsAdmin(pathname) && role !== 'admin') {
     if (isApiRequest(pathname)) {

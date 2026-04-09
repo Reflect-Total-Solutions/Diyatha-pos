@@ -15,49 +15,112 @@ function formatCurrency(value: number): string {
 
 type PaymentConfirmationProps = {
   open: boolean;
-  activity: Activity | null;
+  items: Array<{
+    activity: Activity;
+    quantity: number;
+  }>;
   priceType: PriceType;
   isSubmitting?: boolean;
   error?: string | null;
+  onQuantityChange: (activityId: string, quantity: number) => void;
+  onRemoveItem: (activityId: string) => void;
   onCancel: () => void;
   onConfirm: () => void;
 };
 
 export default function PaymentConfirmation({
   open,
-  activity,
+  items,
   priceType,
   isSubmitting = false,
   error = null,
+  onQuantityChange,
+  onRemoveItem,
   onCancel,
   onConfirm,
 }: PaymentConfirmationProps) {
-  if (!open || !activity) {
+  if (!open || items.length === 0) {
     return null;
   }
 
-  const amount = priceType === 'local' ? activity.local_price : activity.foreign_price;
+  const totalAmount = items.reduce((sum, item) => {
+    const unitAmount = priceType === 'local' ? item.activity.local_price : item.activity.foreign_price;
+    return sum + unitAmount * Math.max(1, item.quantity);
+  }, 0);
+
+  const totalTickets = items.reduce((sum, item) => sum + Math.max(1, item.quantity), 0);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 py-6">
-      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
+      <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
           Payment Confirmation
         </p>
         <h2 className="mt-2 text-xl font-semibold text-slate-900">Confirm Ticket Purchase</h2>
 
-        <div className="mt-4 space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-4">
-          <div className="flex items-center justify-between gap-3 text-sm">
-            <span className="text-slate-500">Activity</span>
-            <span className="font-medium text-slate-900">{activity.name}</span>
-          </div>
-          <div className="flex items-center justify-between gap-3 text-sm">
-            <span className="text-slate-500">Price Type</span>
-            <span className="font-medium uppercase text-slate-900">{priceType}</span>
-          </div>
-          <div className="flex items-center justify-between gap-3 border-t border-slate-200 pt-2 text-sm">
-            <span className="text-slate-500">Amount</span>
-            <span className="text-lg font-semibold text-slate-900">{formatCurrency(amount)}</span>
+        <div className="mt-4 overflow-hidden rounded-xl border border-slate-200">
+          <table className="min-w-full divide-y divide-slate-200 text-sm">
+            <thead className="bg-slate-50">
+              <tr>
+                <th className="px-3 py-2 text-left font-medium text-slate-600">Activity</th>
+                <th className="px-3 py-2 text-right font-medium text-slate-600">Unit</th>
+                <th className="px-3 py-2 text-right font-medium text-slate-600">Qty</th>
+                <th className="px-3 py-2 text-right font-medium text-slate-600">Line Total</th>
+                <th className="px-3 py-2 text-right font-medium text-slate-600">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 bg-white">
+              {items.map((item) => {
+                const unitAmount =
+                  priceType === 'local' ? item.activity.local_price : item.activity.foreign_price;
+                const lineTotal = unitAmount * Math.max(1, item.quantity);
+
+                return (
+                  <tr key={item.activity.id}>
+                    <td className="px-3 py-2 text-slate-900">{item.activity.name}</td>
+                    <td className="px-3 py-2 text-right text-slate-800">{formatCurrency(unitAmount)}</td>
+                    <td className="px-3 py-2 text-right">
+                      <input
+                        type="number"
+                        min={1}
+                        step={1}
+                        inputMode="numeric"
+                        value={item.quantity}
+                        disabled={isSubmitting}
+                        onChange={(event) => {
+                          const parsed = Number.parseInt(event.target.value, 10);
+                          onQuantityChange(
+                            item.activity.id,
+                            Number.isFinite(parsed) ? Math.max(1, parsed) : 1
+                          );
+                        }}
+                        className="h-9 w-20 rounded-md border border-slate-300 px-2 text-right text-sm text-slate-900"
+                      />
+                    </td>
+                    <td className="px-3 py-2 text-right font-medium text-slate-900">{formatCurrency(lineTotal)}</td>
+                    <td className="px-3 py-2 text-right">
+                      <button
+                        type="button"
+                        disabled={isSubmitting}
+                        onClick={() => onRemoveItem(item.activity.id)}
+                        className="inline-flex h-8 items-center justify-center rounded-md border border-slate-300 px-2 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+                      >
+                        Remove
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+
+          <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-3 py-3 text-sm">
+            <div className="text-slate-700">
+              <span className="font-medium">Price Type:</span>{' '}
+              <span className="uppercase">{priceType}</span>
+              <span className="ml-3 font-medium">Tickets:</span> {totalTickets}
+            </div>
+            <div className="text-lg font-semibold text-slate-900">{formatCurrency(totalAmount)}</div>
           </div>
         </div>
 

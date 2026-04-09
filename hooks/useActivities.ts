@@ -50,15 +50,21 @@ function buildListUrl(path: string, options: UseActivitiesOptions): string {
 }
 
 export function useActivities(options: UseActivitiesOptions = {}) {
+  const categoryId = options.categoryId;
+  const includeInactive = options.includeInactive === true;
+  const requestPage = options.page ?? 1;
+  const requestLimit = options.limit ?? 20;
+  const autoFetch = options.autoFetch !== false;
+
   const [activities, setActivities] = useState<Activity[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoading, setIsLoading] = useState(options.autoFetch !== false);
+  const [isLoading, setIsLoading] = useState(autoFetch);
   const [isMutating, setIsMutating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(options.page ?? 1);
-  const [limit, setLimit] = useState(options.limit ?? 20);
+  const [page, setPage] = useState(requestPage);
+  const [limit, setLimit] = useState(requestLimit);
   const [totalPages, setTotalPages] = useState(0);
 
   const loadActivities = useCallback(async () => {
@@ -66,10 +72,18 @@ export function useActivities(options: UseActivitiesOptions = {}) {
     setError(null);
 
     try {
-      const response = await fetch(buildListUrl('/api/activities', options), {
+      const response = await fetch(
+        buildListUrl('/api/activities', {
+          categoryId,
+          includeInactive,
+          page: requestPage,
+          limit: requestLimit,
+        }),
+        {
         method: 'GET',
         cache: 'no-store',
-      });
+        }
+      );
 
       const payload = (await response.json()) as PaginatedApiResponse<Activity>;
 
@@ -90,14 +104,21 @@ export function useActivities(options: UseActivitiesOptions = {}) {
     } finally {
       setIsLoading(false);
     }
-  }, [options]);
+  }, [categoryId, includeInactive, requestLimit, requestPage]);
 
   const loadCategories = useCallback(async () => {
     try {
-      const response = await fetch(buildListUrl('/api/categories', options), {
+      const response = await fetch(
+        buildListUrl('/api/categories', {
+          includeInactive,
+          page: requestPage,
+          limit: requestLimit,
+        }),
+        {
         method: 'GET',
         cache: 'no-store',
-      });
+        }
+      );
 
       const payload = (await response.json()) as PaginatedApiResponse<Category>;
 
@@ -110,15 +131,15 @@ export function useActivities(options: UseActivitiesOptions = {}) {
     } catch {
       setCategories([]);
     }
-  }, [options]);
+  }, [includeInactive, requestLimit, requestPage]);
 
   useEffect(() => {
-    if (options.autoFetch === false) {
+    if (!autoFetch) {
       return;
     }
 
     void Promise.all([loadActivities(), loadCategories()]);
-  }, [loadActivities, loadCategories, options.autoFetch]);
+  }, [autoFetch, loadActivities, loadCategories]);
 
   const createActivity = useCallback(async (input: CreateActivityRequest): Promise<MutationResult> => {
     setIsMutating(true);

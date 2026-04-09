@@ -29,6 +29,11 @@ export default function LoginForm({ redirectTo }: LoginFormProps) {
       });
 
       const payload = (await response.json()) as {
+        data?: {
+          user?: {
+            role?: 'admin' | 'cashier';
+          };
+        };
         error?: string;
         message?: string;
       };
@@ -38,7 +43,15 @@ export default function LoginForm({ redirectTo }: LoginFormProps) {
         return;
       }
 
-      router.push(redirectTo || '/dashboard');
+      const isAdmin = payload.data?.user?.role === 'admin';
+      const targetRedirect =
+        redirectTo && !(isAdmin && redirectTo === '/dashboard')
+          ? redirectTo
+          : isAdmin
+            ? '/admin'
+            : '/dashboard';
+
+      router.push(targetRedirect);
       router.refresh();
     } catch {
       setErrorMessage('Unable to complete login right now. Please try again.');

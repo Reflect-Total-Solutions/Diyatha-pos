@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useEffect, useMemo, useState } from 'react';
 
 import ActivityGrid from '@/components/pos/ActivityGrid';
 import DailySummary from '@/components/pos/DailySummary';
@@ -21,7 +21,29 @@ type PrintResponse = {
     token_number?: string;
   };
   error?: string;
+  code?: string;
 };
+
+type PrintAttemptResult = {
+  success: boolean;
+  tokenNumber?: string;
+  error?: string;
+  code?: string;
+};
+
+type CartItem = {
+  activity: Activity;
+  quantity: number;
+};
+
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('en-LK', {
+    style: 'currency',
+    currency: 'LKR',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
 
 export default function DashboardPage() {
   const {
@@ -41,7 +63,7 @@ export default function DashboardPage() {
     isMutating: isTransactionsMutating,
     error: transactionsError,
     refetch: refetchTransactions,
-    createTransaction,
+    createBulkTransactions,
     cancelTransaction,
     searchTransactions,
     endCurrentGroup,
@@ -57,7 +79,7 @@ export default function DashboardPage() {
   const removeNotification = useNotificationsStore((state) => state.remove);
 
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('all');
-  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
@@ -117,56 +139,213 @@ export default function DashboardPage() {
     return new Map(activities.map((activity) => [activity.id, activity] as const));
   }, [activities]);
 
+  const cartSummary = useMemo(() => {
+    return cartItems.reduce(
+      (acc, item) => {
+        const unitPrice = priceType === 'local' ? item.activity.local_price : item.activity.foreign_price;
+        const quantity = Math.max(1, item.quantity);
+
+        return {
+          uniqueActivities: acc.uniqueActivities + 1,
+          totalTickets: acc.totalTickets + quantity,
+          totalAmount: acc.totalAmount + unitPrice * quantity,
+        };
+      },
+      {
+        uniqueActivities: 0,
+        totalTickets: 0,
+        totalAmount: 0,
+      }
+    );
+  }, [cartItems, priceType]);
+
+  async function printTransaction(transactionId: string): Promise<PrintAttemptResult> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15_000);
+
+    try {
+      const printResponse = await fetch('/api/print', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ transaction_id: transactionId }),
+        signal: controller.signal,
+      });
+
+      const printPayload = (await printResponse.json().catch(() => ({}))) as PrintResponse;
+
+      if (!printResponse.ok) {
+        return {
+          success: false,
+          error: printPayload.error ?? 'Ticket could not be printed automatically.',
+          code: printPayload.code,
+        };
+      }
+
+      return {
+        success: true,
+        tokenNumber: printPayload.data?.token_number,
+      };
+    } catch {
+      return {
+        success: false,
+        error: 'Printer request timed out or failed. Ticket saved for later print.',
+        code: 'PRINTER_OFFLINE',
+      };
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  function addActivityToCart(activity: Activity) {
+    setCartItems((current) => {
+      const existingIndex = current.findIndex((item) => item.activity.id === activity.id);
+
+      if (existingIndex === -1) {
+        return [...current, { activity, quantity: 1 }];
+      }
+
+      return current.map((item, index) =>
+        index === existingIndex
+          ? {
+              ...item,
+              quantity: item.quantity + 1,
+            }
+          : item
+      );
+    });
+  }
+
+  function updateCartQuantity(activityId: string, quantity: number) {
+    setCartItems((current) =>
+      current.map((item) =>
+        item.activity.id === activityId
+          ? {
+              ...item,
+              quantity: Math.max(1, Math.floor(quantity || 1)),
+            }
+          : item
+      )
+    );
+  }
+
+  function removeFromCart(activityId: string) {
+    setCartItems((current) => current.filter((item) => item.activity.id !== activityId));
+  }
+
+  function clearCart() {
+    setCartItems([]);
+  }
+
+  async function printTicketsInBackground(
+    transactions: Array<{ id: string; token_number?: string | null }>,
+  ) {
+    let printedCount = 0;
+    let pendingPrintCount = 0;
+    let firstTokenNumber: string | undefined;
+    let stopPrintingForSession = false;
+
+    for (const txn of transactions) {
+      if (stopPrintingForSession) {
+        pendingPrintCount += 1;
+        continue;
+      }
+
+      const printResult = await printTransaction(txn.id);
+
+      if (printResult.success) {
+        printedCount += 1;
+        if (!firstTokenNumber && printResult.tokenNumber) {
+          firstTokenNumber = printResult.tokenNumber;
+        }
+        continue;
+      }
+
+      pendingPrintCount += 1;
+
+      if (printResult.code === 'PRINTER_OFFLINE' || printResult.code === 'SERVICE_UNAVAILABLE') {
+        stopPrintingForSession = true;
+      }
+    }
+
+    const totalCreated = transactions.length;
+
+    if (pendingPrintCount > 0) {
+      pushNotification({
+        type: 'warning',
+        title: 'Print pending',
+        message:
+          pendingPrintCount === totalCreated
+            ? `Printer unavailable. ${totalCreated} ticket(s) saved for later print.`
+            : `${printedCount} printed, ${pendingPrintCount} pending print.`,
+      });
+    } else if (printedCount > 0) {
+      pushNotification({
+        type: 'success',
+        title: 'Tickets printed',
+        message:
+          printedCount === 1 && firstTokenNumber
+            ? `Token ${firstTokenNumber} printed successfully.`
+            : `${printedCount} ticket(s) printed successfully.`,
+      });
+    }
+  }
+
   async function handleConfirmPayment() {
-    if (!selectedActivity) {
+    if (cartItems.length === 0) {
       return;
     }
 
     setPaymentError(null);
     setIsConfirmingPayment(true);
 
-    const transactionResult = await createTransaction({
-      activity_id: selectedActivity.id,
-      price_type: priceType,
-    });
+    try {
+      // Build the items array for the bulk API
+      const bulkItems = cartItems.map((item) => ({
+        activity_id: item.activity.id,
+        quantity: Math.max(1, item.quantity),
+      }));
 
-    if (!transactionResult.success || !transactionResult.data) {
-      setPaymentError(transactionResult.error ?? 'Unable to create transaction.');
+      const sharedGroupId = summary.currentGroupId ?? undefined;
+
+      // Single atomic API call to create all transactions
+      const bulkResult = await createBulkTransactions(
+        bulkItems,
+        priceType,
+        sharedGroupId
+      );
+
+      if (!bulkResult.success || !bulkResult.data) {
+        setPaymentError(bulkResult.error ?? 'Unable to create transactions.');
+        setIsConfirmingPayment(false);
+        return;
+      }
+
+      const createdTransactions = bulkResult.data.transactions;
+      const totalCreated = createdTransactions.length;
+
+      // === Close the dialog and clear cart IMMEDIATELY ===
+      clearCart();
+      setPaymentError(null);
       setIsConfirmingPayment(false);
-      return;
-    }
+      setIsPaymentOpen(false);
 
-    const transactionId = transactionResult.data.id;
-
-    const printResponse = await fetch('/api/print', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ transaction_id: transactionId }),
-    });
-
-    const printPayload = (await printResponse.json().catch(() => ({}))) as PrintResponse;
-
-    if (!printResponse.ok) {
-      pushNotification({
-        type: 'warning',
-        title: 'Transaction created, print pending',
-        message: printPayload.error ?? 'Ticket could not be printed automatically.',
-      });
-    } else {
       pushNotification({
         type: 'success',
         title: 'Payment complete',
-        message: printPayload.data?.token_number
-          ? `Token ${printPayload.data.token_number} printed successfully.`
-          : 'Ticket printed successfully.',
+        message: `${totalCreated} ticket(s) created successfully. Printing...`,
       });
-    }
 
-    setSelectedActivity(null);
-    setIsPaymentOpen(false);
-    setIsConfirmingPayment(false);
+      // Refresh transaction list right away
+      void refetchTransactions();
+
+      // === Print tickets in the background (fire-and-forget) ===
+      void printTicketsInBackground(createdTransactions);
+    } catch {
+      setPaymentError('Unexpected error while processing payment. Please try again.');
+      setIsConfirmingPayment(false);
+    }
   }
 
   async function handleCancelTransaction(transactionId: string) {
@@ -224,7 +403,7 @@ export default function DashboardPage() {
                 POS Dashboard
               </h1>
               <p className="mt-2 text-sm text-slate-600">
-                One activity equals one bill. Select an activity and confirm payment to print tickets.
+                Select multiple activities, adjust quantities, then confirm payment once.
               </p>
             </div>
 
@@ -288,12 +467,10 @@ export default function DashboardPage() {
               activities={filteredActivities}
               isLoading={isActivitiesLoading}
               error={activitiesError}
-              selectedActivityId={selectedActivity?.id}
               onRetry={refetchActivities}
               onActivitySelect={(activity) => {
-                setSelectedActivity(activity);
+                addActivityToCart(activity);
                 setPaymentError(null);
-                setIsPaymentOpen(true);
               }}
             />
           </div>
@@ -327,6 +504,110 @@ export default function DashboardPage() {
               </p>
             ) : null}
           </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">Selected Activities</h2>
+                <p className="text-xs text-slate-500">
+                  {cartSummary.uniqueActivities} activities, {cartSummary.totalTickets} tickets
+                </p>
+              </div>
+              <button
+                type="button"
+                className="inline-flex h-8 items-center justify-center rounded-md border border-slate-300 px-2 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+                disabled={cartItems.length === 0 || isConfirmingPayment || isTransactionsMutating}
+                onClick={clearCart}
+              >
+                Clear
+              </button>
+            </div>
+
+            <div className="mt-3 space-y-2">
+              {cartItems.map((item) => (
+                <div key={item.activity.id} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                  <p className="text-sm font-medium text-slate-900">{item.activity.name}</p>
+                  <div className="mt-2 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-300 text-sm font-medium text-slate-700 hover:bg-white"
+                        disabled={isConfirmingPayment || isTransactionsMutating}
+                        onClick={() => updateCartQuantity(item.activity.id, item.quantity - 1)}
+                      >
+                        -
+                      </button>
+                      <input
+                        type="number"
+                        min={1}
+                        step={1}
+                        value={item.quantity}
+                        inputMode="numeric"
+                        className="h-8 w-16 rounded-md border border-slate-300 px-2 text-center text-sm"
+                        disabled={isConfirmingPayment || isTransactionsMutating}
+                        onChange={(event) => {
+                          const parsed = Number.parseInt(event.target.value, 10);
+                          updateCartQuantity(item.activity.id, Number.isFinite(parsed) ? parsed : 1);
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-300 text-sm font-medium text-slate-700 hover:bg-white"
+                        disabled={isConfirmingPayment || isTransactionsMutating}
+                        onClick={() => updateCartQuantity(item.activity.id, item.quantity + 1)}
+                      >
+                        +
+                      </button>
+                    </div>
+
+                    <div className="text-right">
+                      <p className="text-xs text-slate-500">
+                        {formatCurrency(
+                          priceType === 'local'
+                            ? item.activity.local_price
+                            : item.activity.foreign_price
+                        )}
+                      </p>
+                      <button
+                        type="button"
+                        className="mt-1 text-xs font-medium text-rose-700 hover:text-rose-800"
+                        disabled={isConfirmingPayment || isTransactionsMutating}
+                        onClick={() => removeFromCart(item.activity.id)}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {cartItems.length === 0 ? (
+                <p className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-4 text-center text-sm text-slate-500">
+                  No activities selected yet.
+                </p>
+              ) : null}
+            </div>
+
+            <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <p className="text-xs uppercase tracking-wide text-slate-500">Total</p>
+              <p className="mt-1 text-lg font-semibold text-slate-900">
+                {formatCurrency(cartSummary.totalAmount)}
+              </p>
+              <p className="text-xs text-slate-500">{cartSummary.totalTickets} ticket(s)</p>
+            </div>
+
+            <Button
+              type="button"
+              className="mt-3 w-full"
+              disabled={cartItems.length === 0 || isConfirmingPayment || isTransactionsMutating}
+              onClick={() => {
+                setPaymentError(null);
+                setIsPaymentOpen(true);
+              }}
+            >
+              Review & Confirm
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -344,16 +625,17 @@ export default function DashboardPage() {
 
       <PaymentConfirmation
         open={isPaymentOpen}
-        activity={selectedActivity}
+        items={cartItems}
         priceType={priceType}
         error={paymentError}
         isSubmitting={isConfirmingPayment || isTransactionsMutating}
+        onQuantityChange={updateCartQuantity}
+        onRemoveItem={removeFromCart}
         onCancel={() => {
           if (isConfirmingPayment) {
             return;
           }
 
-          setSelectedActivity(null);
           setIsPaymentOpen(false);
           setPaymentError(null);
         }}

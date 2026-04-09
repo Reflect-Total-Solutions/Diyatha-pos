@@ -79,6 +79,22 @@ export const TransactionSchema = z.object({
 
 export type TransactionInput = z.infer<typeof TransactionSchema>;
 
+export const BulkTransactionSchema = z.object({
+  transaction_group_id: z.string().uuid('Invalid group ID').optional(),
+  price_type: z.enum(['local', 'foreign']).describe('Price type must be "local" or "foreign"'),
+  items: z
+    .array(
+      z.object({
+        activity_id: z.string().uuid('Invalid activity ID'),
+        quantity: z.number().int().min(1, 'Quantity must be at least 1').max(50, 'Maximum 50 tickets per activity'),
+      })
+    )
+    .min(1, 'At least one item is required')
+    .max(20, 'Maximum 20 different activities per bulk transaction'),
+});
+
+export type BulkTransactionInput = z.infer<typeof BulkTransactionSchema>;
+
 // ============================================================================
 // Print Schemas
 // ============================================================================

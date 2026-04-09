@@ -73,9 +73,17 @@ export default function AdminDashboardPage() {
             </p>
           </div>
 
-          <Button type="button" variant="outline" onClick={() => void loadData()} disabled={isLoading}>
-            Refresh
-          </Button>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/logout"
+              className="inline-flex h-9 items-center justify-center rounded-lg border border-slate-300 px-3 text-sm font-medium text-slate-700 hover:bg-slate-100"
+            >
+              Sign Out
+            </Link>
+            <Button type="button" variant="outline" onClick={() => void loadData()} disabled={isLoading}>
+              Refresh
+            </Button>
+          </div>
         </div>
 
         {error ? (

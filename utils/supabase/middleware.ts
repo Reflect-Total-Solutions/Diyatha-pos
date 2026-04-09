@@ -5,9 +5,11 @@ import { type NextRequest, NextResponse } from 'next/server';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
+type UserRole = 'admin' | 'cashier' | null;
+
 export const createClient = async (
   request: NextRequest
-): Promise<{ response: NextResponse; user: User | null }> => {
+): Promise<{ response: NextResponse; user: User | null; userRole: UserRole }> => {
   let supabaseResponse = NextResponse.next({
     request: {
       headers: request.headers,
@@ -35,8 +37,22 @@ export const createClient = async (
     data: { user },
   } = await supabase.auth.getUser();
 
+  let userRole: UserRole = null;
+
+  if (user) {
+    const { data } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    const role = (data as { role?: string } | null)?.role;
+    userRole = role === 'admin' || role === 'cashier' ? role : null;
+  }
+
   return {
     response: supabaseResponse,
     user,
+    userRole,
   };
 };

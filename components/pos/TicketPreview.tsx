@@ -1,5 +1,7 @@
 'use client';
 
+import Image from 'next/image';
+
 import { Button } from '@/components/ui/button';
 import type { PriceType } from '@/types/transaction';
 
@@ -11,6 +13,8 @@ export type PrintedTicket = {
   price_type: PriceType;
   amount: number;
   activityName: string;
+  created_at: string;
+  txn_reference: string;
 };
 
 type TicketPreviewProps = {
@@ -19,74 +23,102 @@ type TicketPreviewProps = {
   onClose: () => void;
 };
 
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('en-LK', {
-    style: 'currency',
-    currency: 'LKR',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
-}
-
 export default function TicketPreview({ open, tickets, onClose }: TicketPreviewProps) {
   if (!open || tickets.length === 0) {
     return null;
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-slate-950/60 px-4 py-8 sm:py-12">
-      <div className="relative w-full max-w-4xl rounded-2xl bg-slate-50 p-6 shadow-2xl">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-900">Virtual Printer: Tickets Created</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              Previewing {tickets.length} ticket(s) generated successfully.
-            </p>
-          </div>
-          <Button onClick={onClose} variant="default" className="shadow-sm">
-            Close Preview
-          </Button>
-        </div>
+    <div className="fixed inset-0 z-[100] flex flex-col items-center overflow-y-auto bg-slate-950/80 px-4 py-8 sm:py-12">
+      <div className="mb-6 flex w-full max-w-4xl items-center justify-between">
+        <h2 className="text-2xl font-bold text-white">Visual Receipt Printer ({tickets.length})</h2>
+        <Button onClick={onClose} variant="secondary" className="shadow-sm font-semibold text-slate-900">
+          Close Preview
+        </Button>
+      </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {tickets.map((ticket) => (
-            <div
-              key={ticket.id}
-              className="relative flex flex-col justify-between overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
-            >
-              <div>
-                <div className="flex items-center justify-between pb-2 border-b border-dashed border-slate-200">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                    Admission Ticket
-                  </p>
-                  {ticket.token_index && ticket.token_total && (
-                    <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">
-                      {ticket.token_index}/{ticket.token_total}
-                    </span>
-                  )}
+      <div className="flex w-full max-w-4xl flex-wrap justify-center gap-6 pb-20">
+        {tickets.map((ticket) => (
+          <div
+            key={ticket.id}
+            className="flex flex-col items-center bg-white fill-white shadow-2xl relative"
+            style={{ width: '280px', fontFamily: 'monospace' }}
+          >
+            <div className="w-full flex flex-col items-center p-4 pb-8 text-black relative z-10">
+              {/* Logo */}
+              <div className="mb-4 mt-2 flex w-full flex-col items-center justify-center">
+                <Image
+                  src="/logo/ticket-logo.png"
+                  alt="City of Wonder - Port City Colombo"
+                  width={220}
+                  height={100}
+                  className="h-auto w-full max-w-[220px] object-contain grayscale"
+                />
+              </div>
+
+              {/* Dashed Separator */}
+              <div className="w-full border-b-[2px] border-dashed border-black mb-4"></div>
+
+              {/* Title Section */}
+              <div className="text-center font-bold tracking-widest text-[16px] uppercase leading-tight w-full truncate">
+                {ticket.activityName} TOKEN
+              </div>
+              <div className="text-center font-bold text-[14px] mt-1 tracking-widest">
+                {ticket.token_number || 'N/A'}
+              </div>
+
+              <div className="w-full border-b-[2px] border-dashed border-black my-4"></div>
+
+              {/* Details Details */}
+              <div className="w-full text-left text-[14px] font-semibold leading-[1.6] px-1">
+                <div className="flex w-full whitespace-nowrap">
+                  <span className="w-16">Date</span>
+                  <span className="mr-2">:</span>
+                  <span className="truncate">
+                    {new Date(ticket.created_at).toLocaleDateString('en-GB').replace(/\//g, '-')}
+                  </span>
                 </div>
-                
-                <h3 className="mt-3 text-lg font-bold text-slate-900">{ticket.activityName}</h3>
-                
-                <div className="mt-4 space-y-1">
-                  <div className="flex justify-between text-xs text-slate-500">
-                    <span>Price ({ticket.price_type})</span>
-                    <span className="font-semibold text-slate-900">
-                      {formatCurrency(ticket.amount)}
-                    </span>
-                  </div>
+                <div className="flex w-full whitespace-nowrap">
+                  <span className="w-16">Time</span>
+                  <span className="mr-2">:</span>
+                  <span className="truncate">
+                    {new Date(ticket.created_at).toLocaleTimeString('en-US', {
+                      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true,
+                    })}
+                  </span>
+                </div>
+                <div className="flex w-full whitespace-nowrap">
+                  <span className="w-16">Token</span>
+                  <span className="mr-2">:</span>
+                  <span>{ticket.token_index || 1} of {ticket.token_total || 1}</span>
                 </div>
               </div>
-              
-              <div className="mt-6 rounded-lg bg-slate-50 p-3 text-center">
-                <p className="text-[10px] uppercase tracking-wide text-slate-500">Token Number</p>
-                <p className="mt-1 font-mono text-2xl font-bold tracking-widest text-slate-900">
-                  {ticket.token_number || 'N/A'}
-                </p>
+
+              {/* Value Line */}
+              <div className="w-full flex items-center justify-start mt-6 mb-2 px-1">
+                <span className="text-[24px] font-bold tracking-tight">Value</span>
+                <span className="mx-2 text-[20px] font-bold">:</span>
+                <span className="text-[22px] font-bold tracking-tight">Rs. {ticket.amount.toFixed(2)}</span>
+              </div>
+
+              {/* Txn No */}
+              <div className="w-full text-left text-[10px] font-bold mt-1 px-1 tracking-tight truncate">
+                Txn No : {ticket.txn_reference}
+              </div>
+
+              <div className="w-full border-b-[2px] border-dashed border-black mt-2 mb-4"></div>
+
+              {/* Footer Text */}
+              <div className="text-center text-[10px] font-bold leading-[1.4] mt-2 px-2 tracking-tight">
+                Please surrender this token<br />
+                at the activity point.<br />
+                Cannot be reused. No cash refund.
               </div>
             </div>
-          ))}
-        </div>
+            
+            {/* Ragged bottom paper effect wrapper */}
+          </div>
+        ))}
       </div>
     </div>
   );

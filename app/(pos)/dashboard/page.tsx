@@ -355,6 +355,8 @@ export default function DashboardPage() {
           price_type: t.price_type,
           amount: t.amount,
           activityName: matchingCartItem?.activity.name ?? fallbackName,
+          created_at: t.created_at,
+          txn_reference: t.txn_reference,
         };
       });
       setPreviewTickets(ticketsToPreview);

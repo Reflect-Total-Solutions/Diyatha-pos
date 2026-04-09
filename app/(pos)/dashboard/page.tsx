@@ -7,6 +7,7 @@ import ActivityGrid from '@/components/pos/ActivityGrid';
 import DailySummary from '@/components/pos/DailySummary';
 import PaymentConfirmation from '@/components/pos/PaymentConfirmation';
 import PricingToggle from '@/components/pos/PricingToggle';
+import TicketPreview, { type PrintedTicket } from '@/components/pos/TicketPreview';
 import TransactionHistory from '@/components/pos/TransactionHistory';
 import { Button } from '@/components/ui/button';
 import { useActivities } from '@/hooks/useActivities';
@@ -83,6 +84,7 @@ export default function DashboardPage() {
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
+  const [previewTickets, setPreviewTickets] = useState<PrintedTicket[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [cancellingTransactionId, setCancellingTransactionId] = useState<string | null>(null);
 
@@ -334,14 +336,31 @@ export default function DashboardPage() {
       pushNotification({
         type: 'success',
         title: 'Payment complete',
-        message: `${totalCreated} ticket(s) created successfully. Printing...`,
+        message: `${totalCreated} ticket(s) created successfully. Showing preview...`,
       });
 
       // Refresh transaction list right away
       void refetchTransactions();
 
-      // === Print tickets in the background (fire-and-forget) ===
-      void printTicketsInBackground(createdTransactions);
+      // === Show generated tickets preview in the browser (temp) ===
+      const ticketsToPreview: PrintedTicket[] = createdTransactions.map((t) => {
+        const matchingCartItem = cartItems.find((c) => c.activity.id === t.activity_id);
+        const fallbackName = activities.find((a) => a.id === t.activity_id)?.name ?? 'Unknown Activity';
+        
+        return {
+          id: t.id,
+          token_number: t.token_number,
+          token_index: t.token_index,
+          token_total: t.token_total,
+          price_type: t.price_type,
+          amount: t.amount,
+          activityName: matchingCartItem?.activity.name ?? fallbackName,
+        };
+      });
+      setPreviewTickets(ticketsToPreview);
+
+      // (Disabled physical printing)
+      // void printTicketsInBackground(createdTransactions);
     } catch {
       setPaymentError('Unexpected error while processing payment. Please try again.');
       setIsConfirmingPayment(false);
@@ -391,7 +410,8 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8">
+    <>
+      <main className="mx-auto min-h-screen w-full max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8">
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[2fr_1fr]">
         <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -673,5 +693,12 @@ export default function DashboardPage() {
         ))}
       </div>
     </main>
+
+      <TicketPreview
+        open={previewTickets.length > 0}
+        tickets={previewTickets}
+        onClose={() => setPreviewTickets([])}
+      />
+    </>
   );
 }

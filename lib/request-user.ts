@@ -1,4 +1,4 @@
-import { UnauthorizedError } from '@/lib/errors';
+import { ForbiddenError, UnauthorizedError } from '@/lib/errors';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import type { UserRole } from '@/types/user';
 
@@ -39,4 +39,14 @@ export async function requireRequestUser(): Promise<RequestUserContext> {
       user.email?.split('@')[0] ??
       'Cashier',
   };
+}
+
+export async function requireAdminRequestUser(): Promise<RequestUserContext> {
+  const user = await requireRequestUser();
+
+  if (user.role !== 'admin') {
+    throw new ForbiddenError('Forbidden');
+  }
+
+  return user;
 }

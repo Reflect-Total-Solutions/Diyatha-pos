@@ -1,6 +1,6 @@
 # 🎪 Carnival POS System - Implementation TODO
 
-**Status**: Phase 3 - 67% Complete (4 of 6 tasks)
+**Status**: Phase 4 - 40% Complete (4 of 10 tasks)
 **Last Updated**: 2026-04-09
 **Total Tasks**: 104 across 13 phases
 
@@ -30,7 +30,18 @@
 
 ---
 
-## ⏳ IN PROGRESS IN PHASE 3
+## ⏳ IN PROGRESS IN PHASE 4
+
+- ✅ 4.1 Activity API routes created: /api/activities and /api/activities/[id]
+- ✅ 4.2 Category API routes created: /api/categories and /api/categories/[id]
+- ✅ 4.3 useActivities hook created with list/refetch and activity mutations
+- ✅ 4.4 POS activity components created: ActivityGrid, ActivityButton
+
+**Validation**: npm run lint ✅ | npm run build ✅
+
+---
+
+## ⏳ PARTIALLY COMPLETE IN PHASE 3
 
 - ✅ 3.1 Printer discovery implemented: LAN scan + primary target resolution
 - ✅ 3.2 Printer communication layer implemented: ESC/POS formatting + transport
@@ -102,12 +113,12 @@
 
 | # | Task | Status | Complexity |
 |---|------|--------|-----------|
-| 4.1 | Create activity API routes (GET/POST/PUT/DELETE) | ⏹️ | MEDIUM |
-| 4.2 | Create category API routes (GET/POST/PUT/DELETE) | ⏹️ | MEDIUM |
-| 4.3 | Create useActivities hook | ⏹️ | LOW |
-| 4.4 | Create ActivityGrid & ActivityButton components | ⏹️ | LOW |
+| 4.1 | Create activity API routes (GET/POST/PUT/DELETE) | ✅ | MEDIUM |
+| 4.2 | Create category API routes (GET/POST/PUT/DELETE) | ✅ | MEDIUM |
+| 4.3 | Create useActivities hook | ✅ | LOW |
+| 4.4 | Create ActivityGrid & ActivityButton components | ✅ | LOW |
 
-**Phase 4 Total**: 10 tasks | 0 complete | 0%
+**Phase 4 Total**: 10 tasks | 4 complete | 40%
 
 ---
 
@@ -258,7 +269,7 @@ Phase 13 (Deployment)
 | 1 | ✅ | 11 | 11 | 100% |
 | 2 | ⏳ | 8 | 4 | 50% |
 | 3 | ⏳ | 6 | 4 | 67% |
-| 4 | ⏹️ | 10 | 0 | 0% |
+| 4 | ⏳ | 10 | 4 | 40% |
 | 5 | ⏹️ | 12 | 0 | 0% |
 | 6 | ⏹️ | 8 | 0 | 0% |
 | 7 | ⏹️ | 10 | 0 | 0% |
@@ -268,7 +279,7 @@ Phase 13 (Deployment)
 | 11 | ⏹️ | 7 | 0 | 0% |
 | 12 | ⏹️ | 8 | 0 | 0% |
 | 13 | ⏹️ | 6 | 0 | 0% |
-| **TOTAL** | | **104** | **19** | **18%** |
+| **TOTAL** | | **104** | **23** | **22%** |
 
 ---
 

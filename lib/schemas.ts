@@ -33,6 +33,19 @@ export const ActivitySchema = z.object({
 
 export type ActivityInput = z.infer<typeof ActivitySchema>;
 
+export const UpdateActivitySchema = z.object({
+  name: z.string().min(1, 'Name is required').max(100, 'Name must be 100 characters or less').optional(),
+  description: z.string().optional(),
+  category_id: z.string().uuid('Invalid category ID').nullable().optional(),
+  local_price: z.number().min(0, 'Price must be non-negative').max(99999, 'Price is too high').optional(),
+  foreign_price: z.number().min(0, 'Price must be non-negative').max(99999, 'Price is too high').optional(),
+  image_url: z.string().url('Invalid image URL').nullable().optional(),
+  is_active: z.boolean().optional(),
+  display_order: z.number().int().min(0, 'Display order must be 0 or greater').optional(),
+});
+
+export type UpdateActivityInput = z.infer<typeof UpdateActivitySchema>;
+
 // ============================================================================
 // Category Schemas
 // ============================================================================
@@ -44,6 +57,14 @@ export const CategorySchema = z.object({
 });
 
 export type CategoryInput = z.infer<typeof CategorySchema>;
+
+export const UpdateCategorySchema = z.object({
+  name: z.string().min(1, 'Name is required').max(100, 'Name must be 100 characters or less').optional(),
+  description: z.string().optional(),
+  is_active: z.boolean().optional(),
+});
+
+export type UpdateCategoryInput = z.infer<typeof UpdateCategorySchema>;
 
 // ============================================================================
 // Transaction Schemas

@@ -8,7 +8,7 @@ import {
   toZonedTime,
   fromZonedTime,
 } from 'date-fns-tz';
-import { format, parse } from 'date-fns';
+import { parse } from 'date-fns';
 import { TIMEZONE_COLOMBO, DATE_FORMAT, TIME_FORMAT, DATETIME_FORMAT } from './constants';
 
 /**
@@ -112,7 +112,6 @@ export function getNowISO(): string {
  * Check if a date is today in Colombo timezone
  */
 export function isColomboToday(date: Date): boolean {
-  const today = getColomboDates();
   const dateInColombo = formatInTimeZone(date, TIMEZONE_COLOMBO, 'yyyyMMdd');
   const todayInColombo = formatInTimeZone(
     new Date(),

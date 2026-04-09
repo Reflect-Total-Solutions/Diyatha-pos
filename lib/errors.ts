@@ -11,13 +11,13 @@ import { HTTP_STATUS, ERROR_CODES } from './constants';
 export class ApiErrorBase extends Error {
   public readonly statusCode: number;
   public readonly code: string;
-  public readonly details?: Record<string, any>;
+  public readonly details?: Record<string, unknown>;
 
   constructor(
     message: string,
     statusCode: number,
     code: string,
-    details?: Record<string, any>
+    details?: Record<string, unknown>
   ) {
     super(message);
     this.name = this.constructor.name;
@@ -42,7 +42,7 @@ export class ApiErrorBase extends Error {
  * 401 Unauthorized - Missing or invalid credentials
  */
 export class UnauthorizedError extends ApiErrorBase {
-  constructor(message = 'Unauthorized', details?: Record<string, any>) {
+  constructor(message = 'Unauthorized', details?: Record<string, unknown>) {
     super(
       message,
       HTTP_STATUS.UNAUTHORIZED,
@@ -56,7 +56,7 @@ export class UnauthorizedError extends ApiErrorBase {
  * 403 Forbidden - Authenticated but lacks permission
  */
 export class ForbiddenError extends ApiErrorBase {
-  constructor(message = 'Forbidden', details?: Record<string, any>) {
+  constructor(message = 'Forbidden', details?: Record<string, unknown>) {
     super(
       message,
       HTTP_STATUS.FORBIDDEN,
@@ -87,7 +87,7 @@ export class NotFoundError extends ApiErrorBase {
 export class ValidationError extends ApiErrorBase {
   constructor(
     message = 'Validation failed',
-    details?: Record<string, any> | string[]
+    details?: Record<string, unknown> | string[]
   ) {
     const normalizedDetails = Array.isArray(details)
       ? { errors: details }
@@ -108,7 +108,7 @@ export class PrintError extends ApiErrorBase {
   constructor(
     message = 'Print failed',
     public readonly transactionId?: string,
-    details?: Record<string, any>
+    details?: Record<string, unknown>
   ) {
     super(
       message,
@@ -125,7 +125,7 @@ export class PrintError extends ApiErrorBase {
 export class DatabaseError extends ApiErrorBase {
   constructor(
     message = 'Database operation failed',
-    details?: Record<string, any>
+    details?: Record<string, unknown>
   ) {
     super(
       message,
@@ -143,7 +143,7 @@ export class PrinterDiscoveryError extends ApiErrorBase {
   constructor(
     message = 'Printer discovery failed',
     public readonly attemptedIPs?: string[],
-    details?: Record<string, any>
+    details?: Record<string, unknown>
   ) {
     super(
       message,
@@ -161,7 +161,7 @@ export class RateLimitError extends ApiErrorBase {
   constructor(
     message = 'Too many requests',
     public readonly retryAfterSeconds?: number,
-    details?: Record<string, any>
+    details?: Record<string, unknown>
   ) {
     super(
       message,
@@ -178,7 +178,7 @@ export class RateLimitError extends ApiErrorBase {
 export class ConflictError extends ApiErrorBase {
   constructor(
     message = 'Resource conflict',
-    details?: Record<string, any>
+    details?: Record<string, unknown>
   ) {
     super(
       message,

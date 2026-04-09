@@ -6,7 +6,7 @@
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 interface LogContext {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -64,7 +64,22 @@ class Logger {
   ) {
     // This will be implemented when supabase-server.ts is ready
     // For now, just log to console
-    this[level](message, context);
+    switch (level) {
+      case 'debug':
+        this.debug(message, context as LogContext | undefined);
+        break;
+      case 'info':
+        this.info(message, context as LogContext | undefined);
+        break;
+      case 'warn':
+        this.warn(message, context as LogContext | undefined);
+        break;
+      case 'error':
+        this.error(message, context);
+        break;
+      default:
+        this.info(message, context as LogContext | undefined);
+    }
   }
 }
 

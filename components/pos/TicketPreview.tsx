@@ -144,7 +144,7 @@ export default function TicketPreview({ open, tickets, onClose }: TicketPreviewP
           <div
             key={ticket.id}
             className="ticket-print-container flex flex-col items-center bg-white fill-white shadow-2xl relative"
-            style={{ width: '80mm', fontFamily: 'monospace', paddingBottom: '15mm', marginBottom: '12mm', pageBreakAfter: 'always', breakAfter: 'page' }}
+            style={{ width: '80mm', fontFamily: 'monospace', paddingBottom: '30mm', paddingTop: '5mm', margin: '0 auto' }}
           >
             <div className="w-full flex flex-col items-center p-4 pb-8 text-black relative z-10" style={{ maxWidth: '80mm' }}>
               {/* Logo */}
@@ -229,6 +229,10 @@ export default function TicketPreview({ open, tickets, onClose }: TicketPreviewP
                 <span className="text-[9px] font-bold leading-tight block px-1">
                   The organizers shall not be held liable for any loss, damage to property, or personal injury sustained on the premises.
                 </span>
+                <br />
+                <br />
+                {/* Dashed Separator */}
+              <div className="w-full border-b-[2px] border-dashed border-black mb-4"></div>
               </div>
             </div>
             

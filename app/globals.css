@@ -39,12 +39,9 @@
   
   /* Remove flex layout gaps for printing */
   .ticket-print-container {
-    page-break-after: always;
     page-break-inside: avoid;
     width: 80mm;
     margin: 0;
-    margin-bottom: 20mm !important;
-    padding-bottom: 5mm;
     box-shadow: none !important;
     border: none !important;
     display: block !important;
@@ -53,7 +50,6 @@
   
   @page {
     margin: 0;
-    margin-bottom: 20mm;
     size: 80mm auto;
   }
 }

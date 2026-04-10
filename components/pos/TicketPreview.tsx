@@ -29,16 +29,18 @@ type TicketPreviewProps = {
 export default function TicketPreview({ open, tickets, onClose }: TicketPreviewProps) {
   const pushNotification = useNotificationsStore((state) => state.push);
   const [isPrinting, setIsPrinting] = useState(false);
-  const [printerIp, setPrinterIp] = useState<string>('');
+  const [printerInterface, setPrinterInterface] = useState<string>('');
 
   useEffect(() => {
-    const saved = localStorage.getItem('carnival-printer-ip');
-    if (saved) setPrinterIp(saved);
+    const saved = localStorage.getItem('carnival-printer-interface');
+    if (saved) {
+      setPrinterInterface(saved);
+    }
   }, []);
 
-  const handleIpChange = (ip: string) => {
-    setPrinterIp(ip);
-    localStorage.setItem('carnival-printer-ip', ip);
+  const handleInterfaceChange = (value: string) => {
+    setPrinterInterface(value);
+    localStorage.setItem('carnival-printer-interface', value);
   };
 
   if (!open || tickets.length === 0) {
@@ -46,8 +48,14 @@ export default function TicketPreview({ open, tickets, onClose }: TicketPreviewP
   }
 
   const handleDirectPrint = async () => {
-    if (!printerIp) {
-      pushNotification({ type: 'warning', title: 'Printer IP Required', message: 'Please enter the LAN IP address of the receipt printer.' });
+    const normalizedInterface = printerInterface.trim();
+
+    if (!normalizedInterface) {
+      pushNotification({
+        type: 'warning',
+        title: 'Printer Interface Required',
+        message: 'Enter USB COM interface like \\\\.\\COM3 (check Device Manager > Ports).',
+      });
       return;
     }
 
@@ -59,7 +67,10 @@ export default function TicketPreview({ open, tickets, onClose }: TicketPreviewP
         const response = await fetch('/api/print', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ transaction_id: ticket.id, targetIp: printerIp }),
+          body: JSON.stringify({
+            transaction_id: ticket.id,
+            targetInterface: normalizedInterface,
+          }),
         });
 
         if (!response.ok) {
@@ -70,10 +81,18 @@ export default function TicketPreview({ open, tickets, onClose }: TicketPreviewP
         await new Promise((r) => setTimeout(r, 300));
       }
 
-      pushNotification({ type: 'success', title: 'Printed Successfully', message: `Printed ${successCount} tickets directly to ${printerIp}` });
+      pushNotification({
+        type: 'success',
+        title: 'Printed Successfully',
+        message: `Printed ${successCount} tickets to ${normalizedInterface}`,
+      });
       onClose();
     } catch (e: any) {
-      pushNotification({ type: 'error', title: 'LAN Print Failed', message: e.message || 'Could not connect to printer. Is the IP correct?' });
+      pushNotification({
+        type: 'error',
+        title: 'Direct Print Failed',
+        message: e.message || 'Could not send to printer. Check printer interface and Windows printer setup.',
+      });
     } finally {
       setIsPrinting(false);
     }
@@ -86,13 +105,13 @@ export default function TicketPreview({ open, tickets, onClose }: TicketPreviewP
         <div className="flex items-center gap-4">
         
         <div className="flex flex-col gap-1 items-end">
-          <label className="text-xs font-semibold text-slate-300 uppercase tracking-widest">LAN PRINTER IP</label>
+          <label className="text-xs font-semibold text-slate-300 uppercase tracking-widest">PRINTER INTERFACE</label>
           <input 
             type="text" 
-            placeholder="e.g. 192.168.1.100" 
-            value={printerIp}
-            onChange={(e) => handleIpChange(e.target.value)}
-            className="h-10 w-40 rounded-md border-2 border-slate-600 bg-slate-800 px-3 text-sm font-semibold text-white placeholder-slate-500 focus:border-emerald-400 focus:outline-none"
+            placeholder="USB COM port e.g. \\\\.\\COM3" 
+            value={printerInterface}
+            onChange={(e) => handleInterfaceChange(e.target.value)}
+            className="h-10 w-64 rounded-md border-2 border-slate-600 bg-slate-800 px-3 text-sm font-semibold text-white placeholder-slate-500 focus:border-emerald-400 focus:outline-none"
           />
         </div>
 
@@ -101,7 +120,7 @@ export default function TicketPreview({ open, tickets, onClose }: TicketPreviewP
           disabled={isPrinting}
           className="shadow-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white h-10 px-6 mt-5"
         >
-          {isPrinting ? 'Printing...' : 'Print to LAN'}
+          {isPrinting ? 'Printing...' : 'Print Directly'}
         </Button>
 
         <div className="h-8 w-px bg-slate-700 mx-2 mt-5"></div>

@@ -10,8 +10,9 @@ import { config } from '@/lib/config';
 import { PrintError } from '@/lib/errors';
 
 type PrintTarget = {
-  ip: string;
-  port: number;
+  ip?: string;
+  port?: number;
+  interface?: string;
 };
 
 export type TicketPayload = {
@@ -115,9 +116,23 @@ export async function printActivityTicket(input: {
   transactionId: string;
 }) {
   return enqueue(async () => {
+    const printerInterface =
+      input.target.interface ??
+      (input.target.ip && input.target.port
+        ? `tcp://${input.target.ip}:${input.target.port}`
+        : null);
+
+    if (!printerInterface) {
+      throw new PrintError('Invalid printer target', input.transactionId, {
+        targetIp: input.target.ip,
+        targetPort: input.target.port,
+        targetInterface: input.target.interface,
+      });
+    }
+
     const printer = new ThermalPrinter({
       type: PrinterTypes.EPSON,
-      interface: `tcp://${input.target.ip}:${input.target.port}`,
+      interface: printerInterface,
       width: 48,
       characterSet: CharacterSet.WPC1252,
       breakLine: BreakLine.WORD,
@@ -127,12 +142,15 @@ export async function printActivityTicket(input: {
       },
     });
 
-    const isConnected = await printer.isPrinterConnected();
-    if (!isConnected) {
-      throw new PrintError('Printer is offline', input.transactionId, {
-        targetIp: input.target.ip,
-        targetPort: input.target.port,
-      });
+    if (printerInterface.startsWith('tcp://')) {
+      const isConnected = await printer.isPrinterConnected();
+      if (!isConnected) {
+        throw new PrintError('Printer is offline', input.transactionId, {
+          targetIp: input.target.ip,
+          targetPort: input.target.port,
+          targetInterface: printerInterface,
+        });
+      }
     }
 
     buildTicket(printer, input.payload);
@@ -143,6 +161,7 @@ export async function printActivityTicket(input: {
       throw new PrintError('Failed to execute print job', input.transactionId, {
         targetIp: input.target.ip,
         targetPort: input.target.port,
+        targetInterface: printerInterface,
         cause: error instanceof Error ? error.message : String(error),
       });
     }

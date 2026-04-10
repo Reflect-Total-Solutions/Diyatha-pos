@@ -1,4 +1,5 @@
 import { ERROR_CODES, HTTP_STATUS, RATE_LIMITS } from '@/lib/constants';
+import { config } from '@/lib/config';
 import { PrintError, toApiError } from '@/lib/errors';
 import { resolvePrinterTarget } from '@/lib/printer-discovery';
 import { printActivityTicket } from '@/lib/printer';
@@ -179,8 +180,29 @@ export async function POST(request: Request) {
       );
     }
 
-    const targetIp = validation.data.targetIp;
-    let targetPrinter = targetIp ? { ip: targetIp, port: 9100 } : await resolvePrinterTarget();
+    const targetIp = validation.data.targetIp?.trim();
+    const targetInterface = validation.data.targetInterface?.trim();
+
+    let targetPrinter:
+      | { interface: string; ip?: string; port?: number }
+      | { ip: string; port: number; interface?: string }
+      | null = null;
+
+    if (targetInterface) {
+      targetPrinter = { interface: targetInterface };
+    } else if (targetIp) {
+      targetPrinter = { ip: targetIp, port: 9100 };
+    } else if (config.printer.interface) {
+      targetPrinter = { interface: config.printer.interface };
+    } else {
+      const discovered = await resolvePrinterTarget();
+      targetPrinter = discovered
+        ? {
+            ip: discovered.ip,
+            port: discovered.port,
+          }
+        : null;
+    }
 
     if (!targetPrinter) {
       await supabaseServer
@@ -198,10 +220,7 @@ export async function POST(request: Request) {
     }
 
     const printResult = await printActivityTicket({
-      target: {
-        ip: targetPrinter.ip,
-        port: targetPrinter.port,
-      },
+      target: targetPrinter,
       transactionId: transactionRecord.id,
       payload: {
         tokenNumber,
@@ -237,6 +256,7 @@ export async function POST(request: Request) {
           token_number: tokenNumber,
           printer_ip: printResult.target.ip,
           printer_port: printResult.target.port,
+          printer_interface: printResult.target.interface ?? null,
         },
         created_at: new Date().toISOString(),
       } as never

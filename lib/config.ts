@@ -14,6 +14,7 @@ interface SupabaseConfig {
 interface PrinterConfig {
   ip: string;
   port: number;
+  interface?: string;
   discoveryEnabled: boolean;
   discoveryTimeoutMs: number;
   discoveryPorts: number[];
@@ -48,6 +49,7 @@ function loadConfig(): Config {
   // Validate Printer config
   const printerIp = process.env.PRINTER_IP || '192.168.1.100';
   const printerPortStr = process.env.PRINTER_PORT || '9100';
+  const printerInterface = process.env.PRINTER_INTERFACE?.trim();
   const printerDiscoveryEnabled = process.env.PRINTER_DISCOVERY_ENABLED !== 'false';
   const printerDiscoveryTimeoutMs = parseInt(
     process.env.PRINTER_DISCOVERY_TIMEOUT_MS || '5000',
@@ -91,6 +93,7 @@ function loadConfig(): Config {
     printer: {
       ip: printerIp,
       port: printerPort,
+      interface: printerInterface || undefined,
       discoveryEnabled: printerDiscoveryEnabled,
       discoveryTimeoutMs: printerDiscoveryTimeoutMs,
       discoveryPorts: printerDiscoveryPorts,
@@ -106,6 +109,7 @@ function loadConfig(): Config {
     printer: {
       ip: config.printer.ip,
       port: config.printer.port,
+      interface: config.printer.interface,
       discoveryEnabled: config.printer.discoveryEnabled,
     },
   });

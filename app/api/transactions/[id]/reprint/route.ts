@@ -1,4 +1,5 @@
 import { ERROR_CODES, HTTP_STATUS, RATE_LIMITS } from '@/lib/constants';
+import { config } from '@/lib/config';
 import { toApiError } from '@/lib/errors';
 import { resolvePrinterTarget } from '@/lib/printer-discovery';
 import { printActivityTicket } from '@/lib/printer';
@@ -101,10 +102,21 @@ export async function POST(
       );
     }
 
+    const printerTargetPromise = config.printer.interface
+      ? Promise.resolve({ interface: config.printer.interface } as const)
+      : resolvePrinterTarget().then((target) =>
+          target
+            ? {
+                ip: target.ip,
+                port: target.port,
+              }
+            : null
+        );
+
     const [{ data: activity }, { data: cashier }, targetPrinter] = await Promise.all([
       supabaseServer.from('activities').select('*').eq('id', transactionRecord.activity_id).maybeSingle(),
       supabaseServer.from('users').select('*').eq('id', transactionRecord.cashier_id).maybeSingle(),
-      resolvePrinterTarget(),
+      printerTargetPromise,
     ]);
 
     const activityRecord = activity as unknown as ActivityRow | null;
@@ -131,10 +143,7 @@ export async function POST(
     }
 
     const printResult = await printActivityTicket({
-      target: {
-        ip: targetPrinter.ip,
-        port: targetPrinter.port,
-      },
+      target: targetPrinter,
       transactionId: transactionRecord.id,
       payload: {
         tokenNumber: tokenRecord.token_number,
@@ -181,6 +190,7 @@ export async function POST(
           reprint_count: tokenRecord.reprint_count + 1,
           printer_ip: printResult.target.ip,
           printer_port: printResult.target.port,
+          printer_interface: printResult.target.interface ?? null,
         },
         created_at: new Date().toISOString(),
       } as never

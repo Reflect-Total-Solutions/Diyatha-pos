@@ -43,14 +43,17 @@
     page-break-inside: avoid;
     width: 80mm;
     margin: 0;
-    margin-bottom: 0 !important;
+    margin-bottom: 20mm !important;
     padding-bottom: 5mm;
     box-shadow: none !important;
     border: none !important;
+    display: block !important;
+    float: none !important;
   }
   
   @page {
     margin: 0;
+    margin-bottom: 20mm;
     size: 80mm auto;
   }
 }

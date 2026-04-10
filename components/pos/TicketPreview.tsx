@@ -54,7 +54,7 @@ export default function TicketPreview({ open, tickets, onClose }: TicketPreviewP
           <div
             key={ticket.id}
             className="ticket-print-container flex flex-col items-center bg-white fill-white shadow-2xl relative"
-            style={{ width: '80mm', fontFamily: 'monospace', paddingBottom: '10mm', pageBreakAfter: 'always', breakAfter: 'page' }}
+            style={{ width: '80mm', fontFamily: 'monospace', paddingBottom: '15mm', pageBreakAfter: 'always', breakAfter: 'page' }}
           >
             <div className="w-full flex flex-col items-center p-4 pb-8 text-black relative z-10" style={{ maxWidth: '80mm' }}>
               {/* Logo */}
@@ -126,7 +126,7 @@ export default function TicketPreview({ open, tickets, onClose }: TicketPreviewP
               <div className="w-full border-b-[2px] border-dashed border-black mt-2 mb-4"></div>
 
               {/* Footer Text */}
-              <div className="text-center text-[10px] font-bold leading-[1.4] mt-2 px-2 tracking-tight">
+              <div className="text-center text-[10px] font-bold leading-[1.4] mt-2 mb-6 px-2 tracking-tight">
                 Please surrender this token<br />
                 at the activity point.<br />
                 Cannot be reused. No cash refund.

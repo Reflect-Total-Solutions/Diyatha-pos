@@ -148,7 +148,7 @@ export default function TicketPreview({ open, tickets, onClose }: TicketPreviewP
           >
             <div className="w-full flex flex-col items-center p-4 pb-8 text-black relative z-10" style={{ maxWidth: '80mm' }}>
               {/* Logo */}
-              <div className="mb-0 mt-8 flex w-full flex-col items-center justify-center">
+              <div className="mb-0 mt-9 flex w-full flex-col items-center justify-center">
                 <Image
                   src="/logo/logo.png"
                   alt="City of Wonder - Port City Colombo"

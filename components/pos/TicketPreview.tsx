@@ -144,7 +144,7 @@ export default function TicketPreview({ open, tickets, onClose }: TicketPreviewP
           <div
             key={ticket.id}
             className="ticket-print-container flex flex-col items-center bg-white fill-white shadow-2xl relative"
-            style={{ width: '80mm', fontFamily: 'monospace', paddingBottom: '35mm', paddingTop: '10mm', margin: '0 auto' }}
+            style={{ width: '80mm', fontFamily: 'monospace', paddingBottom: '10mm', paddingTop: '10mm', margin: '0 auto' }}
           >
             <div className="w-full flex flex-col items-center p-4 pb-8 text-black relative z-10" style={{ maxWidth: '80mm' }}>
               {/* Logo */}

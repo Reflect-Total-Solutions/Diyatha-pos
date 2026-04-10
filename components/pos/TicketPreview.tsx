@@ -13,6 +13,7 @@ export type PrintedTicket = {
   price_type: PriceType;
   amount: number;
   activityName: string;
+  cashierName: string;
   created_at: string;
   txn_reference: string;
 };
@@ -53,11 +54,11 @@ export default function TicketPreview({ open, tickets, onClose }: TicketPreviewP
           <div
             key={ticket.id}
             className="ticket-print-container flex flex-col items-center bg-white fill-white shadow-2xl relative"
-            style={{ width: '80mm', fontFamily: 'monospace', paddingBottom: '10mm' }}
+            style={{ width: '80mm', fontFamily: 'monospace', paddingBottom: '10mm', pageBreakAfter: 'always', breakAfter: 'page' }}
           >
             <div className="w-full flex flex-col items-center p-4 pb-8 text-black relative z-10" style={{ maxWidth: '80mm' }}>
               {/* Logo */}
-              <div className="mb-4 mt-2 flex w-full flex-col items-center justify-center">
+              <div className="mb-4 mt-8 flex w-full flex-col items-center justify-center">
                 <Image
                   src="/logo/ticket-logo.png"
                   alt="City of Wonder - Port City Colombo"
@@ -102,6 +103,11 @@ export default function TicketPreview({ open, tickets, onClose }: TicketPreviewP
                   <span className="w-16">Token</span>
                   <span className="mr-2">:</span>
                   <span>{ticket.token_index || 1} of {ticket.token_total || 1}</span>
+                </div>
+                <div className="flex w-full whitespace-nowrap">
+                  <span className="w-16">Cashier</span>
+                  <span className="mr-2">:</span>
+                  <span className="truncate">{ticket.cashierName}</span>
                 </div>
               </div>
 

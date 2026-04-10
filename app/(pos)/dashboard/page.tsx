@@ -11,6 +11,7 @@ import TicketPreview, { type PrintedTicket } from '@/components/pos/TicketPrevie
 import TransactionHistory from '@/components/pos/TransactionHistory';
 import { Button } from '@/components/ui/button';
 import { useActivities } from '@/hooks/useActivities';
+import { useAuth } from '@/hooks/useAuth';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useNotificationsStore } from '@/stores/notifications';
 import { usePriceModeStore } from '@/stores/priceMode';
@@ -32,6 +33,8 @@ function formatCurrency(value: number): string {
 }
 
 export default function DashboardPage() {
+  const { user } = useAuth();
+
   const {
     activities,
     categories,
@@ -248,6 +251,7 @@ export default function DashboardPage() {
           price_type: t.price_type,
           amount: t.amount,
           activityName: matchingCartItem?.activity.name ?? fallbackName,
+          cashierName: user?.display_name ?? 'Staff',
           created_at: t.created_at,
           txn_reference: t.txn_reference,
         };
@@ -539,6 +543,7 @@ export default function DashboardPage() {
                 price_type: t.price_type,
                 amount: t.amount,
                 activityName: fallbackName,
+                cashierName: user?.display_name ?? 'Staff',
                 created_at: t.created_at,
                 txn_reference: t.txn_reference,
               }]);
@@ -557,6 +562,7 @@ export default function DashboardPage() {
                   price_type: t.price_type,
                   amount: t.amount,
                   activityName: fallbackName,
+                  cashierName: user?.display_name ?? 'Staff',
                   created_at: t.created_at,
                   txn_reference: t.txn_reference,
                 };

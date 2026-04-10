@@ -222,10 +222,10 @@ export default function TicketPreview({ open, tickets, onClose }: TicketPreviewP
 
               {/* Footer Text */}
               <div className="text-center text-[10px] font-bold leading-[1.4] mt-2 mb-6 px-2 tracking-tight">
-                Please surrender this token<br />
+                {/* Please surrender this token<br />
                 at the activity point.<br />
                 Cannot be reused. No cash refund.<br />
-                <br />
+                <br /> */}
                 <span className="text-[9px] font-bold leading-tight block px-1">
                   The organizers shall not be held liable for any loss, damage to property, or personal injury sustained on the premises.
                 </span>

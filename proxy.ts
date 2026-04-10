@@ -22,7 +22,7 @@ function needsAdmin(pathname: string): boolean {
   return pathname.startsWith('/admin') || pathname.startsWith('/api/admin');
 }
 
-export async function middleware(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   const { response: supabaseResponse, user, userRole } = await createClient(request);
   const { pathname } = request.nextUrl;
 

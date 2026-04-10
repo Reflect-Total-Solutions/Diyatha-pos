@@ -1,7 +1,6 @@
 import { ERROR_CODES, HTTP_STATUS, RATE_LIMITS } from '@/lib/constants';
 import { getColomboEndOfDay, getColomboStartOfDay } from '@/lib/dateUtils';
 import { toApiError } from '@/lib/errors';
-import { resolvePrinterTarget } from '@/lib/printer-discovery';
 import { rateLimit } from '@/lib/rateLimit';
 import { requireAdminRequestUser } from '@/lib/request-user';
 import { supabaseServer } from '@/lib/supabase-server';
@@ -54,7 +53,6 @@ export async function GET() {
       todaysTransactions,
       pendingPrints,
       recentErrorsResult,
-      printer,
     ] = await Promise.all([
       countRows('users'),
       supabaseServer
@@ -82,10 +80,6 @@ export async function GET() {
         .select('id, message, created_at')
         .order('created_at', { ascending: false })
         .limit(10),
-      Promise.race([
-        resolvePrinterTarget(),
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), 2500))
-      ]),
     ]);
 
     if (activeUsers.error) throw activeUsers.error;
@@ -106,19 +100,6 @@ export async function GET() {
             todays_transactions: todaysTransactions.count ?? 0,
             pending_prints: pendingPrints.count ?? 0,
           },
-          printer: printer
-            ? {
-                online: true,
-                ip: printer.ip,
-                port: printer.port,
-                response_time: printer.responseTime ?? null,
-              }
-            : {
-                online: false,
-                ip: null,
-                port: null,
-                response_time: null,
-              },
           recent_errors: recentErrorsResult.data ?? [],
           refreshed_at: new Date().toISOString(),
         },

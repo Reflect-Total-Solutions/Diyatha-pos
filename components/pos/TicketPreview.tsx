@@ -1,8 +1,10 @@
 'use client';
 
 import Image from 'next/image';
+import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { useWebPrinterStore } from '@/stores/webPrinter';
 import type { PriceType } from '@/types/transaction';
 
 export type PrintedTicket = {
@@ -25,23 +27,57 @@ type TicketPreviewProps = {
 };
 
 export default function TicketPreview({ open, tickets, onClose }: TicketPreviewProps) {
+  const webPrinter = useWebPrinterStore();
+  const [isPrinting, setIsPrinting] = useState(false);
+
   if (!open || tickets.length === 0) {
     return null;
   }
+
+  const handlePrintClick = async () => {
+    if (webPrinter.port) {
+      setIsPrinting(true);
+      const success = await webPrinter.printReceipts(tickets);
+      setIsPrinting(false);
+      if (success) {
+        onClose();
+        return;
+      }
+    }
+    
+    // Fallback to normal printing if USB printer disconnected or failed
+    window.print();
+    onClose();
+  };
+
+  const handleConnectPrinter = async () => {
+    await webPrinter.connect();
+  };
 
   return (
     <div id="ticket-preview-portal" className="preview-modal-overlay fixed inset-0 z-[100] flex flex-col items-center overflow-y-auto bg-slate-950/80 px-4 py-8 sm:py-12">
       <div className="mb-6 flex w-full max-w-4xl items-center justify-between no-print">
         <h2 className="text-2xl font-bold text-white">Visual Receipt Preview ({tickets.length})</h2>
-        <div className="flex">
+        <div className="flex gap-4">
+        {!webPrinter.port ? (
+          <Button 
+            onClick={handleConnectPrinter}
+            variant="outline" 
+            className="shadow-sm font-bold bg-white text-slate-900 border-2 border-slate-300 h-12 px-6"
+          >
+            Connect USB Printer
+          </Button>
+        ) : (
+          <div className="flex items-center text-emerald-400 font-bold text-sm tracking-wide bg-emerald-950/30 px-3 py-1 rounded-lg border border-emerald-500/50">
+            USB PRINTER CONNECTED
+          </div>
+        )}
         <Button 
-          onClick={() => {
-            window.print();
-            onClose();
-          }} 
-          className="shadow-sm font-bold bg-blue-600 hover:bg-blue-700 text-white mr-4 h-12 px-6"
+          onClick={handlePrintClick} 
+          disabled={isPrinting}
+          className="shadow-sm font-bold bg-blue-600 hover:bg-blue-700 text-white h-12 px-6"
         >
-          Print Now
+          {isPrinting ? 'Printing...' : webPrinter.port ? 'Print Directly' : 'Print via Browser'}
         </Button>
         <Button onClick={onClose} variant="secondary" className="shadow-sm font-semibold text-slate-900 h-12 px-6">
           Close Preview

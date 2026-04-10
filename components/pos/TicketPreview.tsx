@@ -1,10 +1,10 @@
 'use client';
 
 import Image from 'next/image';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { useWebPrinterStore } from '@/stores/webPrinter';
+import { useNotificationsStore } from '@/stores/notifications';
 import type { PriceType } from '@/types/transaction';
 
 export type PrintedTicket = {
@@ -27,59 +27,94 @@ type TicketPreviewProps = {
 };
 
 export default function TicketPreview({ open, tickets, onClose }: TicketPreviewProps) {
-  const webPrinter = useWebPrinterStore();
+  const pushNotification = useNotificationsStore((state) => state.push);
   const [isPrinting, setIsPrinting] = useState(false);
+  const [printerIp, setPrinterIp] = useState<string>('');
+
+  useEffect(() => {
+    const saved = localStorage.getItem('carnival-printer-ip');
+    if (saved) setPrinterIp(saved);
+  }, []);
+
+  const handleIpChange = (ip: string) => {
+    setPrinterIp(ip);
+    localStorage.setItem('carnival-printer-ip', ip);
+  };
 
   if (!open || tickets.length === 0) {
     return null;
   }
 
-  const handlePrintClick = async () => {
-    if (webPrinter.port) {
-      setIsPrinting(true);
-      const success = await webPrinter.printReceipts(tickets);
-      setIsPrinting(false);
-      if (success) {
-        onClose();
-        return;
-      }
+  const handleDirectPrint = async () => {
+    if (!printerIp) {
+      pushNotification({ type: 'warning', title: 'Printer IP Required', message: 'Please enter the LAN IP address of the receipt printer.' });
+      return;
     }
-    
-    // Fallback to normal printing if USB printer disconnected or failed
-    window.print();
-    onClose();
-  };
 
-  const handleConnectPrinter = async () => {
-    await webPrinter.connect();
+    setIsPrinting(true);
+    let successCount = 0;
+
+    try {
+      for (const ticket of tickets) {
+        const response = await fetch('/api/print', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ transaction_id: ticket.id, targetIp: printerIp }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to print token ' + (ticket.token_number || '-'));
+        }
+        successCount++;
+        // Small delay between prints to avoid overwhelming buffer
+        await new Promise((r) => setTimeout(r, 300));
+      }
+
+      pushNotification({ type: 'success', title: 'Printed Successfully', message: `Printed ${successCount} tickets directly to ${printerIp}` });
+      onClose();
+    } catch (e: any) {
+      pushNotification({ type: 'error', title: 'LAN Print Failed', message: e.message || 'Could not connect to printer. Is the IP correct?' });
+    } finally {
+      setIsPrinting(false);
+    }
   };
 
   return (
     <div id="ticket-preview-portal" className="preview-modal-overlay fixed inset-0 z-[100] flex flex-col items-center overflow-y-auto bg-slate-950/80 px-4 py-8 sm:py-12">
       <div className="mb-6 flex w-full max-w-4xl items-center justify-between no-print">
         <h2 className="text-2xl font-bold text-white">Visual Receipt Preview ({tickets.length})</h2>
-        <div className="flex gap-4">
-        {!webPrinter.port ? (
-          <Button 
-            onClick={handleConnectPrinter}
-            variant="outline" 
-            className="shadow-sm font-bold bg-white text-slate-900 border-2 border-slate-300 h-12 px-6"
-          >
-            Connect USB Printer
-          </Button>
-        ) : (
-          <div className="flex items-center text-emerald-400 font-bold text-sm tracking-wide bg-emerald-950/30 px-3 py-1 rounded-lg border border-emerald-500/50">
-            USB PRINTER CONNECTED
-          </div>
-        )}
+        <div className="flex items-center gap-4">
+        
+        <div className="flex flex-col gap-1 items-end">
+          <label className="text-xs font-semibold text-slate-300 uppercase tracking-widest">LAN PRINTER IP</label>
+          <input 
+            type="text" 
+            placeholder="e.g. 192.168.1.100" 
+            value={printerIp}
+            onChange={(e) => handleIpChange(e.target.value)}
+            className="h-10 w-40 rounded-md border-2 border-slate-600 bg-slate-800 px-3 text-sm font-semibold text-white placeholder-slate-500 focus:border-emerald-400 focus:outline-none"
+          />
+        </div>
+
         <Button 
-          onClick={handlePrintClick} 
+          onClick={handleDirectPrint} 
           disabled={isPrinting}
-          className="shadow-sm font-bold bg-blue-600 hover:bg-blue-700 text-white h-12 px-6"
+          className="shadow-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white h-10 px-6 mt-5"
         >
-          {isPrinting ? 'Printing...' : webPrinter.port ? 'Print Directly' : 'Print via Browser'}
+          {isPrinting ? 'Printing...' : 'Print to LAN'}
         </Button>
-        <Button onClick={onClose} variant="secondary" className="shadow-sm font-semibold text-slate-900 h-12 px-6">
+
+        <div className="h-8 w-px bg-slate-700 mx-2 mt-5"></div>
+
+        <Button 
+          onClick={() => { window.print(); onClose(); }} 
+          variant="outline" 
+          disabled={isPrinting}
+          className="shadow-sm font-bold text-slate-900 border-2 border-slate-300 bg-white h-10 px-4 mt-5"
+        >
+          Browser Print
+        </Button>
+        <Button onClick={onClose} variant="secondary" className="shadow-sm font-semibold text-slate-900 h-10 px-4 mt-5">
           Close Preview
         </Button>
         </div>
@@ -90,7 +125,7 @@ export default function TicketPreview({ open, tickets, onClose }: TicketPreviewP
           <div
             key={ticket.id}
             className="ticket-print-container flex flex-col items-center bg-white fill-white shadow-2xl relative"
-            style={{ width: '80mm', fontFamily: 'monospace', paddingBottom: '15mm', pageBreakAfter: 'always', breakAfter: 'page' }}
+            style={{ width: '80mm', fontFamily: 'monospace', paddingBottom: '2mm', pageBreakAfter: 'always', breakAfter: 'page' }}
           >
             <div className="w-full flex flex-col items-center p-4 pb-8 text-black relative z-10" style={{ maxWidth: '80mm' }}>
               {/* Logo */}
@@ -165,7 +200,11 @@ export default function TicketPreview({ open, tickets, onClose }: TicketPreviewP
               <div className="text-center text-[10px] font-bold leading-[1.4] mt-2 mb-6 px-2 tracking-tight">
                 Please surrender this token<br />
                 at the activity point.<br />
-                Cannot be reused. No cash refund.
+                Cannot be reused. No cash refund.<br />
+                <br />
+                <span className="text-[8px] font-normal leading-tight block px-1">
+                  The organizers shall not be held liable for any loss, damage to property, or personal injury sustained on the premises.
+                </span>
               </div>
             </div>
             

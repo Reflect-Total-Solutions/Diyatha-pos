@@ -179,7 +179,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const targetPrinter = await resolvePrinterTarget();
+    const targetIp = validation.data.targetIp;
+    let targetPrinter = targetIp ? { ip: targetIp, port: 9100 } : await resolvePrinterTarget();
 
     if (!targetPrinter) {
       await supabaseServer

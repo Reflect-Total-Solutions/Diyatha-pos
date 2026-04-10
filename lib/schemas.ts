@@ -101,6 +101,7 @@ export type BulkTransactionInput = z.infer<typeof BulkTransactionSchema>;
 
 export const PrintRequestSchema = z.object({
   transaction_id: z.string().uuid('Invalid transaction ID'),
+  targetIp: z.string().optional(),
 });
 
 export type PrintRequestInput = z.infer<typeof PrintRequestSchema>;

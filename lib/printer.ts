@@ -102,6 +102,10 @@ function buildTicket(printer: ThermalPrinter, payload: TicketPayload) {
   printer.println('Cannot be reused.');
   printer.println('No Cash refund.');
   printer.newLine();
+  printer.println('The organizers shall not be held liable');
+  printer.println('for any loss, damage to property, or');
+  printer.println('personal injury sustained on the premises.');
+  printer.newLine();
   printer.cut();
 }
 

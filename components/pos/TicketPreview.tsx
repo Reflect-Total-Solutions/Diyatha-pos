@@ -144,7 +144,7 @@ export default function TicketPreview({ open, tickets, onClose }: TicketPreviewP
           <div
             key={ticket.id}
             className="ticket-print-container flex flex-col items-center bg-white fill-white shadow-2xl relative"
-            style={{ width: '80mm', fontFamily: 'monospace', paddingBottom: '30mm', paddingTop: '5mm', margin: '0 auto' }}
+            style={{ width: '80mm', fontFamily: 'monospace', paddingBottom: '35mm', paddingTop: '10mm', margin: '0 auto' }}
           >
             <div className="w-full flex flex-col items-center p-4 pb-8 text-black relative z-10" style={{ maxWidth: '80mm' }}>
               {/* Logo */}
@@ -236,7 +236,7 @@ export default function TicketPreview({ open, tickets, onClose }: TicketPreviewP
               <br />
                 <br />
                 {/* Dashed Separator */}
-              <div className="w-full border-b-[2px] border-dashed border-white mb-4"></div>
+              <div className="w-full border-b-[2px] border-dashed border-blue mb-6"></div>
               </div>
             </div>
             

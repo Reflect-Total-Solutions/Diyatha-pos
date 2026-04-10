@@ -43,7 +43,7 @@
     page-break-inside: avoid;
     width: 80mm;
     margin: 0;
-    margin-bottom: 15mm !important;
+    margin-bottom: 20mm !important;
     padding-bottom: 5mm;
     box-shadow: none !important;
     border: none !important;
@@ -53,7 +53,7 @@
   
   @page {
     margin: 0;
-    margin-bottom: 15mm;
+    margin-bottom: 20mm;
     size: 80mm auto;
   }
 }

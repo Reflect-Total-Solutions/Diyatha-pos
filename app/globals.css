@@ -2,6 +2,59 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+@media print {
+  /* Hide the regular page content entirely to ensure clean formatting */
+  body > *:not(#ticket-preview-portal) {
+    display: none !important;
+  }
+  
+  /* Make sure modal overlay is invisible and not fixed (fixed breaks print pagination) */
+  .preview-modal-overlay {
+    background: transparent !important;
+    position: static !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: block !important;
+    overflow: visible !important;
+    height: auto !important;
+    min-height: 100% !important;
+  }
+  
+  /* Hide the preview header entirely */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Make the printable wrapper static to fix pagination */
+  #printable-tickets, #printable-tickets * {
+    visibility: visible !important;
+  }
+  #printable-tickets {
+    position: static !important;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    display: block !important;
+  }
+  
+  /* Remove flex layout gaps for printing */
+  .ticket-print-container {
+    page-break-after: always;
+    page-break-inside: avoid;
+    width: 80mm;
+    margin: 0;
+    margin-bottom: 0 !important;
+    padding-bottom: 5mm;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  
+  @page {
+    margin: 0;
+    size: 80mm auto;
+  }
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {

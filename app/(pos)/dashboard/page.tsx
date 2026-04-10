@@ -16,22 +16,6 @@ import { useNotificationsStore } from '@/stores/notifications';
 import { usePriceModeStore } from '@/stores/priceMode';
 import type { Activity } from '@/types/activity';
 
-type PrintResponse = {
-  data?: {
-    success?: boolean;
-    token_number?: string;
-  };
-  error?: string;
-  code?: string;
-};
-
-type PrintAttemptResult = {
-  success: boolean;
-  tokenNumber?: string;
-  error?: string;
-  code?: string;
-};
-
 type CartItem = {
   activity: Activity;
   quantity: number;
@@ -161,45 +145,6 @@ export default function DashboardPage() {
     );
   }, [cartItems]);
 
-  async function printTransaction(transactionId: string): Promise<PrintAttemptResult> {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15_000);
-
-    try {
-      const printResponse = await fetch('/api/print', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ transaction_id: transactionId }),
-        signal: controller.signal,
-      });
-
-      const printPayload = (await printResponse.json().catch(() => ({}))) as PrintResponse;
-
-      if (!printResponse.ok) {
-        return {
-          success: false,
-          error: printPayload.error ?? 'Ticket could not be printed automatically.',
-          code: printPayload.code,
-        };
-      }
-
-      return {
-        success: true,
-        tokenNumber: printPayload.data?.token_number,
-      };
-    } catch {
-      return {
-        success: false,
-        error: 'Printer request timed out or failed. Ticket saved for later print.',
-        code: 'PRINTER_OFFLINE',
-      };
-    } finally {
-      clearTimeout(timeoutId);
-    }
-  }
-
   function addActivityToCart(activity: Activity) {
     setCartItems((current) => {
       const existingIndex = current.findIndex(
@@ -240,60 +185,6 @@ export default function DashboardPage() {
 
   function clearCart() {
     setCartItems([]);
-  }
-
-  async function printTicketsInBackground(
-    transactions: Array<{ id: string; token_number?: string | null }>,
-  ) {
-    let printedCount = 0;
-    let pendingPrintCount = 0;
-    let firstTokenNumber: string | undefined;
-    let stopPrintingForSession = false;
-
-    for (const txn of transactions) {
-      if (stopPrintingForSession) {
-        pendingPrintCount += 1;
-        continue;
-      }
-
-      const printResult = await printTransaction(txn.id);
-
-      if (printResult.success) {
-        printedCount += 1;
-        if (!firstTokenNumber && printResult.tokenNumber) {
-          firstTokenNumber = printResult.tokenNumber;
-        }
-        continue;
-      }
-
-      pendingPrintCount += 1;
-
-      if (printResult.code === 'PRINTER_OFFLINE' || printResult.code === 'SERVICE_UNAVAILABLE') {
-        stopPrintingForSession = true;
-      }
-    }
-
-    const totalCreated = transactions.length;
-
-    if (pendingPrintCount > 0) {
-      pushNotification({
-        type: 'warning',
-        title: 'Print pending',
-        message:
-          pendingPrintCount === totalCreated
-            ? `Printer unavailable. ${totalCreated} ticket(s) saved for later print.`
-            : `${printedCount} printed, ${pendingPrintCount} pending print.`,
-      });
-    } else if (printedCount > 0) {
-      pushNotification({
-        type: 'success',
-        title: 'Tickets printed',
-        message:
-          printedCount === 1 && firstTokenNumber
-            ? `Token ${firstTokenNumber} printed successfully.`
-            : `${printedCount} ticket(s) printed successfully.`,
-      });
-    }
   }
 
   async function handleConfirmPayment() {
@@ -361,10 +252,8 @@ export default function DashboardPage() {
           txn_reference: t.txn_reference,
         };
       });
+      
       setPreviewTickets(ticketsToPreview);
-
-      // (Disabled physical printing)
-      // void printTicketsInBackground(createdTransactions);
     } catch {
       setPaymentError('Unexpected error while processing payment. Please try again.');
       setIsConfirmingPayment(false);
@@ -639,12 +528,39 @@ export default function DashboardPage() {
           cancellingTransactionId={cancellingTransactionId}
           onCancelTransaction={handleCancelTransaction}
           onReprintTransaction={(transactionId) => {
-            void printTicketsInBackground([{ id: transactionId }]);
+            const t = transactions.find((txn) => txn.id === transactionId);
+            if (t) {
+              const fallbackName = activities.find((a) => a.id === t.activity_id)?.name ?? 'Unknown Activity';
+              setPreviewTickets([{
+                id: t.id,
+                token_number: t.token_number,
+                token_index: t.token_index,
+                token_total: t.token_total,
+                price_type: t.price_type,
+                amount: t.amount,
+                activityName: fallbackName,
+                created_at: t.created_at,
+                txn_reference: t.txn_reference,
+              }]);
+            }
           }}
           onReprintGroup={(groupId) => {
             const groupTxns = transactions.filter(t => t.transaction_group_id === groupId && !t.cancelled_at);
             if (groupTxns.length > 0) {
-              void printTicketsInBackground(groupTxns.map(t => ({ id: t.id })));
+              setPreviewTickets(groupTxns.map((t) => {
+                const fallbackName = activities.find((a) => a.id === t.activity_id)?.name ?? 'Unknown Activity';
+                return {
+                  id: t.id,
+                  token_number: t.token_number,
+                  token_index: t.token_index,
+                  token_total: t.token_total,
+                  price_type: t.price_type,
+                  amount: t.amount,
+                  activityName: fallbackName,
+                  created_at: t.created_at,
+                  txn_reference: t.txn_reference,
+                };
+              }));
             }
           }}
         />
@@ -704,7 +620,6 @@ export default function DashboardPage() {
         open={previewTickets.length > 0}
         tickets={previewTickets}
         onClose={() => {
-          void printTicketsInBackground(previewTickets);
           setPreviewTickets([]);
         }}
       />

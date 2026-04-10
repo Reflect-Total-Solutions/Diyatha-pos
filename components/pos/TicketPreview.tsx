@@ -29,22 +29,33 @@ export default function TicketPreview({ open, tickets, onClose }: TicketPreviewP
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col items-center overflow-y-auto bg-slate-950/80 px-4 py-8 sm:py-12">
-      <div className="mb-6 flex w-full max-w-4xl items-center justify-between">
-        <h2 className="text-2xl font-bold text-white">Visual Receipt Printer ({tickets.length})</h2>
-        <Button onClick={onClose} variant="secondary" className="shadow-sm font-semibold text-slate-900">
+    <div id="ticket-preview-portal" className="preview-modal-overlay fixed inset-0 z-[100] flex flex-col items-center overflow-y-auto bg-slate-950/80 px-4 py-8 sm:py-12">
+      <div className="mb-6 flex w-full max-w-4xl items-center justify-between no-print">
+        <h2 className="text-2xl font-bold text-white">Visual Receipt Preview ({tickets.length})</h2>
+        <div className="flex">
+        <Button 
+          onClick={() => {
+            window.print();
+            onClose();
+          }} 
+          className="shadow-sm font-bold bg-blue-600 hover:bg-blue-700 text-white mr-4 h-12 px-6"
+        >
+          Print Now
+        </Button>
+        <Button onClick={onClose} variant="secondary" className="shadow-sm font-semibold text-slate-900 h-12 px-6">
           Close Preview
         </Button>
+        </div>
       </div>
 
-      <div className="flex w-full max-w-4xl flex-wrap justify-center gap-6 pb-20">
+      <div id="printable-tickets" className="flex w-full max-w-4xl flex-wrap justify-center gap-6 pb-20">
         {tickets.map((ticket) => (
           <div
             key={ticket.id}
-            className="flex flex-col items-center bg-white fill-white shadow-2xl relative"
-            style={{ width: '280px', fontFamily: 'monospace' }}
+            className="ticket-print-container flex flex-col items-center bg-white fill-white shadow-2xl relative"
+            style={{ width: '80mm', fontFamily: 'monospace', paddingBottom: '10mm' }}
           >
-            <div className="w-full flex flex-col items-center p-4 pb-8 text-black relative z-10">
+            <div className="w-full flex flex-col items-center p-4 pb-8 text-black relative z-10" style={{ maxWidth: '80mm' }}>
               {/* Logo */}
               <div className="mb-4 mt-2 flex w-full flex-col items-center justify-center">
                 <Image

@@ -24,12 +24,6 @@ type MaintenancePayload = {
     todays_transactions: number;
     pending_prints: number;
   };
-  printer: {
-    online: boolean;
-    ip: string | null;
-    port: number | null;
-    response_time: number | null;
-  };
   recent_errors: Array<{ id: string; message: string; created_at: string }>;
   refreshed_at: string;
 };
@@ -173,32 +167,20 @@ export default function AdminDashboardPage() {
               <div className="p-2.5 bg-slate-100 text-slate-600 rounded-xl">
                 <Printer className="w-5 h-5" strokeWidth={2.5} />
               </div>
-              <h2 className="text-base font-bold text-slate-900">Printer Status</h2>
+              <h2 className="text-base font-bold text-slate-900">Receipt Printer</h2>
             </div>
-            <div className={`px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full ${
-              data?.printer.online 
-                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
-                : 'bg-red-50 text-red-700 border border-red-200'
-            }`}>
-              {data?.printer.online ? 'Online' : 'Offline'}
+            <div className="px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+              Browser Managed
             </div>
           </div>
           
-          <div className="p-6 flex-1 bg-slate-50/50 rounded-b-2xl">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-1.5">Network Address</p>
-                <p className="text-sm font-medium text-slate-900">
-                  {data?.printer.ip ? `${data.printer.ip}:${data.printer.port}` : 'Not configured'}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-1.5">Response Time</p>
-                <p className="text-sm font-medium text-slate-900">
-                  {data?.printer.response_time ? `${data.printer.response_time}ms` : '—'}
-                </p>
-              </div>
-            </div>
+          <div className="p-6 flex-1 bg-slate-50/50 rounded-b-2xl flex flex-col justify-center">
+            <p className="text-sm font-medium text-slate-600 mb-2 leading-relaxed">
+              Ticket receipts are now managed directly by your browser.
+            </p>
+            <p className="text-xs text-slate-500">
+              When tickets are generated, browser print previews will format and cut them automatically using your OS printer settings.
+            </p>
           </div>
         </div>
 

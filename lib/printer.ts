@@ -55,6 +55,7 @@ function buildTicket(printer: ThermalPrinter, payload: TicketPayload) {
   printer.println('CITY OF WONDER');
   printer.bold(false);
   printer.println('AT PORT CITY COLOMBO');
+  printer.println('Hotline: 0776569718');
 
   printer.drawLine('=');
   printer.bold(true);

@@ -148,7 +148,7 @@ export default function TicketPreview({ open, tickets, onClose }: TicketPreviewP
           >
             <div className="w-full flex flex-col items-center p-4 pb-8 text-black relative z-10" style={{ maxWidth: '80mm' }}>
               {/* Logo */}
-              <div className="mb-4 mt-8 flex w-full flex-col items-center justify-center">
+              <div className="mb-0 mt-8 flex w-full flex-col items-center justify-center">
                 <Image
                   src="/logo/ticket-logo.png"
                   alt="City of Wonder - Port City Colombo"
@@ -156,6 +156,11 @@ export default function TicketPreview({ open, tickets, onClose }: TicketPreviewP
                   height={100}
                   className="h-auto w-full max-w-[220px] object-contain grayscale"
                 />
+              </div>
+
+              {/* Hotline */}
+              <div className="text-center font-bold text-[12px] mb-4 tracking-tight w-full">
+                Hotline: 0776569718
               </div>
 
               {/* Dashed Separator */}
@@ -209,9 +214,9 @@ export default function TicketPreview({ open, tickets, onClose }: TicketPreviewP
               </div>
 
               {/* Txn No */}
-              <div className="w-full text-left text-[10px] font-bold mt-1 px-1 tracking-tight truncate">
+              {/* <div className="w-full text-left text-[10px] font-bold mt-1 px-1 tracking-tight truncate">
                 Txn No : {ticket.txn_reference}
-              </div>
+              </div> */}
 
               <div className="w-full border-b-[2px] border-dashed border-black mt-2 mb-4"></div>
 
@@ -221,7 +226,7 @@ export default function TicketPreview({ open, tickets, onClose }: TicketPreviewP
                 at the activity point.<br />
                 Cannot be reused. No cash refund.<br />
                 <br />
-                <span className="text-[8px] font-normal leading-tight block px-1">
+                <span className="text-[9px] font-bold leading-tight block px-1">
                   The organizers shall not be held liable for any loss, damage to property, or personal injury sustained on the premises.
                 </span>
               </div>

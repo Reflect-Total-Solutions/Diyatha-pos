@@ -233,6 +233,10 @@ export default function TicketPreview({ open, tickets, onClose }: TicketPreviewP
                 <br />
                 {/* Dashed Separator */}
               <div className="w-full border-b-[2px] border-dashed border-black mb-4"></div>
+              <br />
+                <br />
+                {/* Dashed Separator */}
+              <div className="w-full border-b-[2px] border-dashed border-white mb-4"></div>
               </div>
             </div>
             

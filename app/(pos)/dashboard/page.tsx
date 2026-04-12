@@ -16,6 +16,7 @@ import { useTransactions } from '@/hooks/useTransactions';
 import { useNotificationsStore } from '@/stores/notifications';
 import { usePriceModeStore } from '@/stores/priceMode';
 import type { Activity } from '@/types/activity';
+import { getColomboStartOfDay, getColomboEndOfDay } from '@/lib/dateUtils';
 
 type CartItem = {
   activity: Activity;
@@ -45,6 +46,10 @@ export default function DashboardPage() {
     limit: 100,
   });
 
+  const today = new Date();
+  const startOfTodayISO = getColomboStartOfDay(today).toISOString();
+  const endOfTodayISO = getColomboEndOfDay(today).toISOString();
+
   const {
     transactions,
     summary,
@@ -56,7 +61,9 @@ export default function DashboardPage() {
     searchTransactions,
     endCurrentGroup,
   } = useTransactions({
-    limit: 100,
+    limit: 10000,
+    startDate: startOfTodayISO,
+    endDate: endOfTodayISO,
   });
 
   const priceType = usePriceModeStore((state) => state.priceType);

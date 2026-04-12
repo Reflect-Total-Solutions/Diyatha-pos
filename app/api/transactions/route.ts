@@ -5,6 +5,7 @@ import { requireRequestUser } from '@/lib/request-user';
 import { TransactionSchema, validateInput } from '@/lib/schemas';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { resequenceGroupTransactions } from '@/lib/transactions';
+import { getColomboDates } from '@/lib/dateUtils';
 import type { Database } from '@/types/database';
 
 type ActivityRow = Database['public']['Tables']['activities']['Row'];
@@ -20,7 +21,7 @@ function parsePagination(url: string) {
 
   const page = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
   const limit = Number.isFinite(limitParam)
-    ? Math.min(100, Math.max(1, limitParam))
+    ? Math.min(10000, Math.max(1, limitParam))
     : 20;
 
   return {
@@ -29,6 +30,8 @@ function parsePagination(url: string) {
     includeCancelled: searchParams.get('include_cancelled') === 'true',
     transactionGroupId: searchParams.get('transaction_group_id') ?? undefined,
     cashierId: searchParams.get('cashier_id') ?? undefined,
+    startDate: searchParams.get('start_date') ?? undefined,
+    endDate: searchParams.get('end_date') ?? undefined,
   };
 }
 
@@ -56,7 +59,7 @@ export async function GET(request: Request) {
       );
     }
 
-    const { page, limit, includeCancelled, transactionGroupId, cashierId } = parsePagination(request.url);
+    const { page, limit, includeCancelled, transactionGroupId, cashierId, startDate, endDate } = parsePagination(request.url);
     const offset = (page - 1) * limit;
 
     let query = supabase
@@ -77,6 +80,14 @@ export async function GET(request: Request) {
 
     if (!includeCancelled) {
       query = query.is('cancelled_at', null);
+    }
+
+    if (startDate) {
+      query = query.gte('created_at', startDate);
+    }
+
+    if (endDate) {
+      query = query.lt('created_at', endDate);
     }
 
     const { data, error, count } = await query;
@@ -302,12 +313,14 @@ export async function POST(request: Request) {
       );
     }
 
+    const { utcNow } = getColomboDates();
+
     const tokenPayload: TokenInsert = {
       transaction_id: transactionRecord.id,
       token_number: generatedToken,
       token_index: tokenIndex,
       token_total: tokenTotal,
-      printed_at: new Date().toISOString(),
+      printed_at: utcNow.toISOString(),
     };
 
     await supabase.from('tokens').insert(tokenPayload as never);

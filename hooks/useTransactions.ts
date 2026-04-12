@@ -46,6 +46,8 @@ export type UseTransactionsOptions = {
   transactionGroupId?: string;
   includeCancelled?: boolean;
   autoFetch?: boolean;
+  startDate?: string;
+  endDate?: string;
 };
 
 export type CreateTransactionInput = {
@@ -123,6 +125,8 @@ export function useTransactions(options: UseTransactionsOptions = {}) {
           limit: options.limit ?? 20,
           transaction_group_id: options.transactionGroupId,
           include_cancelled: options.includeCancelled,
+          start_date: options.startDate,
+          end_date: options.endDate,
         }),
         {
           method: 'GET',
@@ -149,7 +153,7 @@ export function useTransactions(options: UseTransactionsOptions = {}) {
     } finally {
       setIsLoading(false);
     }
-  }, [options.includeCancelled, options.limit, options.page, options.transactionGroupId]);
+  }, [options.includeCancelled, options.limit, options.page, options.transactionGroupId, options.startDate, options.endDate]);
 
   useEffect(() => {
     if (options.autoFetch === false) {

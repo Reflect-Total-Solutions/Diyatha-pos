@@ -320,6 +320,7 @@ export function useTransactions(options: UseTransactionsOptions = {}) {
 
   const createBulkTransactions = useCallback(async (
     items: BulkTransactionItem[],
+    paymentMethod: 'cash' | 'card',
     groupId?: string
   ): Promise<MutationResult<BulkTransactionResult>> => {
     setIsMutating(true);
@@ -335,6 +336,7 @@ export function useTransactions(options: UseTransactionsOptions = {}) {
         },
         body: JSON.stringify({
           transaction_group_id: targetGroupId,
+          payment_method: paymentMethod,
           items,
         }),
       });

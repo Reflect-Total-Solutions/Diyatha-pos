@@ -22,6 +22,8 @@ export interface DailyReportRow {
     total_transactions: number;
     total_local_amount: number;
     total_foreign_amount: number;
+    total_cash_amount: number;
+    total_card_amount: number;
     total_amount: number;
   };
 }
@@ -45,6 +47,8 @@ export interface CashierReportRow {
   total_transactions: number;
   local_total: number;
   foreign_total: number;
+  cash_total: number;
+  card_total: number;
   total_amount: number;
 }
 

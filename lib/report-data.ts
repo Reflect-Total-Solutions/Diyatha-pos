@@ -243,6 +243,8 @@ export async function fetchDailyReportData(
             total_transactions: 0,
             total_local_amount: 0,
             total_foreign_amount: 0,
+            total_cash_amount: 0,
+            total_card_amount: 0,
             total_amount: 0,
           },
         },
@@ -251,6 +253,13 @@ export async function fetchDailyReportData(
 
     entity.row.totals.total_transactions += count;
     entity.row.totals.total_amount = Number((entity.row.totals.total_amount + amount).toFixed(2));
+
+    // Handle payment method summary
+    if ((summaryRow as Record<string, unknown>).payment_method === 'card') {
+      entity.row.totals.total_card_amount = Number((entity.row.totals.total_card_amount + amount).toFixed(2));
+    } else {
+      entity.row.totals.total_cash_amount = Number((entity.row.totals.total_cash_amount + amount).toFixed(2));
+    }
 
     if (summaryRow.price_type === 'local') {
       entity.row.totals.total_local_amount = Number(
@@ -449,11 +458,19 @@ export async function fetchCashierReportData(
         total_transactions: 0,
         local_total: 0,
         foreign_total: 0,
+        cash_total: 0,
+        card_total: 0,
         total_amount: 0,
       };
 
     existing.total_transactions += count;
     existing.total_amount = Number((existing.total_amount + amount).toFixed(2));
+
+    if ((row as Record<string, unknown>).payment_method === 'card') {
+      existing.card_total = Number((existing.card_total + amount).toFixed(2));
+    } else {
+      existing.cash_total = Number((existing.cash_total + amount).toFixed(2));
+    }
 
     if (row.price_type === 'local') {
       existing.local_count += count;

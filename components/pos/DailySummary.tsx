@@ -37,6 +37,8 @@ export default function DailySummary({
     let cancelledCount = 0;
     let localAmount = 0;
     let foreignAmount = 0;
+    let cashAmount = 0;
+    let cardAmount = 0;
 
     for (const transaction of transactions) {
       if (transaction.cancelled_at) {
@@ -53,6 +55,12 @@ export default function DailySummary({
         foreignCount += 1;
         foreignAmount += transaction.amount;
       }
+
+      if (transaction.payment_method === "card") {
+        cardAmount += transaction.amount;
+      } else {
+        cashAmount += transaction.amount;
+      }
     }
 
     const totalAmount = Number((localAmount + foreignAmount).toFixed(2));
@@ -62,6 +70,8 @@ export default function DailySummary({
       localCount,
       foreignCount,
       cancelledCount,
+      cashAmount,
+      cardAmount,
       localAmount: Number(localAmount.toFixed(2)),
       foreignAmount: Number(foreignAmount.toFixed(2)),
       totalAmount,
@@ -132,7 +142,7 @@ export default function DailySummary({
         </div>
       </div>
 
-      <div className="mt-5 rounded-2xl border-3 border-yellow-400 bg-gradient-to-r from-slate-900 to-slate-800 px-5 py-4 text-white shadow-lg flex flex-col sm:flex-row justify-between">
+      <div className="mt-5 rounded-2xl border-3 border-yellow-400 bg-gradient-to-r from-slate-900 to-slate-800 px-5 py-4 text-white shadow-lg flex flex-col justify-between gap-4">
         <div>
           <p className="text-xs font-bold uppercase tracking-widest text-yellow-300">
             Gross Total
@@ -140,6 +150,16 @@ export default function DailySummary({
           <p className="mt-2 text-4xl font-bold text-yellow-400">
             {formatCurrency(summary.totalAmount)}
           </p>
+        </div>
+        <div className="flex flex-col gap-2 pt-2 border-t border-slate-700">
+          <div className="flex justify-between items-center text-sm font-bold text-slate-300">
+            <span className="flex items-center gap-1"><span>💵</span> Cash Total:</span>
+            <span className="text-white text-base">{formatCurrency(summary.cashAmount)}</span>
+          </div>
+          <div className="flex justify-between items-center text-sm font-bold text-slate-300">
+            <span className="flex items-center gap-1"><span>💳</span> Card Total:</span>
+            <span className="text-white text-base">{formatCurrency(summary.cardAmount)}</span>
+          </div>
         </div>
       </div>
     </section>

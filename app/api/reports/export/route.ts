@@ -58,6 +58,8 @@ function mapDailyRows(rows: DailyReportRow[]): ExportRow[] {
     total_transactions: row.totals.total_transactions,
     total_local_amount: row.totals.total_local_amount,
     total_foreign_amount: row.totals.total_foreign_amount,
+    total_cash_amount: row.totals.total_cash_amount,
+    total_card_amount: row.totals.total_card_amount,
     total_amount: row.totals.total_amount,
     activities: row.activities
       .map(
@@ -88,6 +90,8 @@ function mapCashierRows(rows: CashierReportRow[]): ExportRow[] {
     total_transactions: row.total_transactions,
     local_total: row.local_total,
     foreign_total: row.foreign_total,
+    cash_total: row.cash_total,
+    card_total: row.card_total,
     total_amount: row.total_amount,
   }));
 }

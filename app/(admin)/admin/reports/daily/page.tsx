@@ -91,6 +91,8 @@ export default function DailyReportPage() {
               <th className="px-3 py-2 text-left font-medium text-slate-600">Date</th>
               <th className="px-3 py-2 text-left font-medium text-slate-600">Cashier</th>
               <th className="px-3 py-2 text-right font-medium text-slate-600">Transactions</th>
+              <th className="px-3 py-2 text-right font-medium text-slate-600">Cash Total</th>
+              <th className="px-3 py-2 text-right font-medium text-slate-600">Card Total</th>
               <th className="px-3 py-2 text-right font-medium text-slate-600">Local Total</th>
               <th className="px-3 py-2 text-right font-medium text-slate-600">Foreign Total</th>
               <th className="px-3 py-2 text-right font-medium text-slate-600">Grand Total</th>
@@ -103,6 +105,8 @@ export default function DailyReportPage() {
                 <td className="px-3 py-2 text-slate-800">{row.date}</td>
                 <td className="px-3 py-2 text-slate-800">{row.cashier_name}</td>
                 <td className="px-3 py-2 text-right text-slate-800">{row.totals.total_transactions}</td>
+                <td className="px-3 py-2 text-right text-slate-800">{row.totals.total_cash_amount?.toFixed(2)}</td>
+                <td className="px-3 py-2 text-right text-slate-800">{row.totals.total_card_amount?.toFixed(2)}</td>
                 <td className="px-3 py-2 text-right text-slate-800">{row.totals.total_local_amount.toFixed(2)}</td>
                 <td className="px-3 py-2 text-right text-slate-800">{row.totals.total_foreign_amount.toFixed(2)}</td>
                 <td className="px-3 py-2 text-right font-semibold text-slate-900">
@@ -120,7 +124,7 @@ export default function DailyReportPage() {
 
             {!isLoading && daily.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-3 py-8 text-center text-slate-500">
+                <td colSpan={9} className="px-3 py-8 text-center text-slate-500">
                   No records found for selected filters.
                 </td>
               </tr>

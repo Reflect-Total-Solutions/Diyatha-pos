@@ -22,12 +22,12 @@ export default function ReportsLayout({ children }: { children: ReactNode }) {
             </p>
           </div>
 
-          <Link
+          {/* <Link
             href="/dashboard"
             className="inline-flex h-9 items-center justify-center rounded-lg border border-slate-300 px-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100"
           >
             Back to POS
-          </Link>
+          </Link> */}
         </div>
 
         <nav className="mt-4 flex flex-wrap gap-2">

@@ -24,7 +24,7 @@ const adminLinks = [
   { href: '/admin/reports', label: 'Reports', icon: LineChart },
   { href: '/admin/audit-log', label: 'Audit Log', icon: ClipboardList },
   { href: '/admin/maintenance', label: 'Maintenance', icon: Settings },
-  { href: '/dashboard', label: 'POS Dashboard', icon: Store },
+  // { href: '/dashboard', label: 'POS Dashboard', icon: Store },
 ];
 
 export default function AdminSidebar() {

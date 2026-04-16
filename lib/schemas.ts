@@ -81,6 +81,7 @@ export type TransactionInput = z.infer<typeof TransactionSchema>;
 
 export const BulkTransactionSchema = z.object({
   transaction_group_id: z.string().uuid('Invalid group ID').optional(),
+  payment_method: z.enum(['cash', 'card']).optional().default('cash'),
   items: z
     .array(
       z.object({

@@ -122,6 +122,8 @@ export default function CashierReportPage() {
               <th className="px-3 py-2 text-right font-medium text-slate-600">Local Count</th>
               <th className="px-3 py-2 text-right font-medium text-slate-600">Foreign Count</th>
               <th className="px-3 py-2 text-right font-medium text-slate-600">Transactions</th>
+              <th className="px-3 py-2 text-right font-medium text-slate-600">Cash Total</th>
+              <th className="px-3 py-2 text-right font-medium text-slate-600">Card Total</th>
               <th className="px-3 py-2 text-right font-medium text-slate-600">Local Total</th>
               <th className="px-3 py-2 text-right font-medium text-slate-600">Foreign Total</th>
               <th className="px-3 py-2 text-right font-medium text-slate-600">Grand Total</th>
@@ -134,6 +136,8 @@ export default function CashierReportPage() {
                 <td className="px-3 py-2 text-right text-slate-800">{row.local_count}</td>
                 <td className="px-3 py-2 text-right text-slate-800">{row.foreign_count}</td>
                 <td className="px-3 py-2 text-right text-slate-800">{row.total_transactions}</td>
+                <td className="px-3 py-2 text-right text-slate-800">{row.cash_total.toFixed(2)}</td>
+                <td className="px-3 py-2 text-right text-slate-800">{row.card_total.toFixed(2)}</td>
                 <td className="px-3 py-2 text-right text-slate-800">{row.local_total.toFixed(2)}</td>
                 <td className="px-3 py-2 text-right text-slate-800">{row.foreign_total.toFixed(2)}</td>
                 <td className="px-3 py-2 text-right font-semibold text-slate-900">
@@ -144,7 +148,7 @@ export default function CashierReportPage() {
 
             {!isLoading && cashier.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-3 py-8 text-center text-slate-500">
+                <td colSpan={9} className="px-3 py-8 text-center text-slate-500">
                   No records found for selected filters.
                 </td>
               </tr>

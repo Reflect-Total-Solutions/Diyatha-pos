@@ -197,7 +197,7 @@ export default function DashboardPage() {
     setCartItems([]);
   }
 
-  async function handleConfirmPayment() {
+  async function handleConfirmPayment(paymentMethod: 'cash' | 'card') {
     if (cartItems.length === 0) {
       return;
     }
@@ -218,6 +218,7 @@ export default function DashboardPage() {
       // Single atomic API call to create all transactions
       const bulkResult = await createBulkTransactions(
         bulkItems,
+        paymentMethod,
         sharedGroupId
       );
 

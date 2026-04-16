@@ -5,6 +5,7 @@
 
 export type PriceType = 'local' | 'foreign';
 export type PrintStatus = 'pending' | 'printed' | 'failed';
+export type PaymentMethod = 'cash' | 'card';
 
 export interface Transaction {
   id: string;
@@ -12,6 +13,7 @@ export interface Transaction {
   cashier_id: string;
   activity_id: string;
   price_type: PriceType;
+  payment_method: PaymentMethod;
   amount: number;
   token_index?: number | null;
   token_total?: number | null;

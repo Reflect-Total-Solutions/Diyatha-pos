@@ -138,8 +138,9 @@ export async function POST(request: Request) {
       // Create a new transaction group
       const insertPayload: TransactionGroupInsert = {
         cashier_id: user.id,
+        payment_method: payload.payment_method || 'cash',
         notes: null,
-      };
+      } as TransactionGroupInsert & { payment_method: string };
 
       const { data: newGroup, error: newGroupError } = await supabase
         .from('transaction_groups')
@@ -227,10 +228,11 @@ export async function POST(request: Request) {
         cashier_id: user.id,
         activity_id: activity.id,
         price_type: ticketPriceType,
+        payment_method: payload.payment_method || 'cash',
         amount,
         txn_reference: txnReference,
         print_status: 'pending',
-      };
+      } as TransactionInsert & { payment_method: string };
 
       const { data: txnData, error: txnError } = await supabase
         .from('transactions')

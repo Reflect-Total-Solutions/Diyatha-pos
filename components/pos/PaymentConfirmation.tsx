@@ -1,8 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import type { Activity } from '@/types/activity';
-import type { PriceType } from '@/types/transaction';
+import type { PriceType, PaymentMethod } from '@/types/transaction';
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('en-LK', {
@@ -25,7 +26,7 @@ type PaymentConfirmationProps = {
   onQuantityChange: (activityId: string, priceType: PriceType, quantity: number) => void;
   onRemoveItem: (activityId: string, priceType: PriceType) => void;
   onCancel: () => void;
-  onConfirm: () => void;
+  onConfirm: (paymentMethod: PaymentMethod) => void;
 };
 
 export default function PaymentConfirmation({
@@ -38,6 +39,8 @@ export default function PaymentConfirmation({
   onCancel,
   onConfirm,
 }: PaymentConfirmationProps) {
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('cash');
+
   if (!open || items.length === 0) {
     return null;
   }
@@ -136,24 +139,51 @@ export default function PaymentConfirmation({
           </p>
         ) : null}
 
-        <div className="mt-6 flex items-center justify-end gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            disabled={isSubmitting}
-            onClick={onCancel}
-            className="h-14 rounded-xl border-2 border-slate-400 bg-slate-100 px-6 text-lg font-bold text-slate-700 hover:bg-slate-200 transition-colors"
-          >
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            disabled={isSubmitting}
-            className="h-14 rounded-xl border-2 border-green-600 bg-green-600 px-8 text-lg font-bold text-white hover:bg-green-700 transition-colors"
-            onClick={onConfirm}
-          >
-            {isSubmitting ? 'Processing...' : 'Confirm Payment'}
-          </Button>
+        <div className="mt-6 flex flex-col items-center justify-between gap-4 border-t-2 border-slate-300 pt-6 sm:flex-row sm:gap-0">
+          <div className="flex gap-4 self-start">
+            <button
+              type="button"
+              onClick={() => setSelectedMethod('cash')}
+              className={`flex h-14 items-center justify-center rounded-xl border-2 px-6 text-lg font-bold transition-all sm:w-32 ${
+                selectedMethod === 'cash'
+                  ? 'border-blue-600 bg-blue-100 text-blue-900 shadow-sm'
+                  : 'border-slate-300 bg-white text-slate-500 hover:border-slate-400 hover:bg-slate-50'
+              }`}
+            >
+              💵 Cash
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedMethod('card')}
+              className={`flex h-14 items-center justify-center rounded-xl border-2 px-6 text-lg font-bold transition-all sm:w-32 ${
+                selectedMethod === 'card'
+                  ? 'border-blue-600 bg-blue-100 text-blue-900 shadow-sm'
+                  : 'border-slate-300 bg-white text-slate-500 hover:border-slate-400 hover:bg-slate-50'
+              }`}
+            >
+              💳 Card
+            </button>
+          </div>
+
+          <div className="flex w-full items-center justify-end gap-3 sm:w-auto">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isSubmitting}
+              onClick={onCancel}
+              className="h-14 rounded-xl border-2 border-slate-400 bg-slate-100 px-6 text-lg font-bold text-slate-700 transition-colors hover:bg-slate-200"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              disabled={isSubmitting}
+              className="h-14 rounded-xl border-2 border-green-600 bg-green-600 px-8 text-lg font-bold text-white transition-colors hover:bg-green-700"
+              onClick={() => onConfirm(selectedMethod)}
+            >
+              {isSubmitting ? 'Processing...' : 'Confirm Payment'}
+            </Button>
+          </div>
         </div>
       </div>
     </div>

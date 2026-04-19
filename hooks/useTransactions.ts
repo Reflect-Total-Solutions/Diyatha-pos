@@ -378,7 +378,8 @@ export function useTransactions(options: UseTransactionsOptions = {}) {
 
   const cancelTransaction = useCallback(async (
     transactionId: string,
-    reason?: string
+    reason?: string,
+    cancelCode?: string
   ): Promise<MutationResult<TransactionWithToken>> => {
     setIsMutating(true);
 
@@ -388,7 +389,7 @@ export function useTransactions(options: UseTransactionsOptions = {}) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ action: 'cancel', reason }),
+        body: JSON.stringify({ action: 'cancel', reason, cancelCode }),
       });
 
       const payload = (await response.json()) as SingleApiResponse<TransactionWithToken>;

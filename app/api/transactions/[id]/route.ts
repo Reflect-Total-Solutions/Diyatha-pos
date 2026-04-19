@@ -12,6 +12,7 @@ import type { Database } from '@/types/database';
 const CancelTransactionSchema = z.object({
   action: z.literal('cancel'),
   reason: z.string().optional(),
+  cancelCode: z.string(),
 });
 
 type TransactionRow = Database['public']['Tables']['transactions']['Row'];
@@ -153,6 +154,16 @@ export async function PATCH(
           details: validation.errors,
         },
         { status: HTTP_STATUS.BAD_REQUEST }
+      );
+    }
+
+    if (validation.data.cancelCode !== process.env.CANCEL_CODE) {
+      return Response.json(
+        {
+          error: 'Invalid cancellation code',
+          code: ERROR_CODES.FORBIDDEN,
+        },
+        { status: HTTP_STATUS.FORBIDDEN }
       );
     }
 

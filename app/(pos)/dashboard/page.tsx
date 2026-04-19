@@ -275,8 +275,14 @@ export default function DashboardPage() {
   async function handleCancelTransaction(transactionId: string) {
     setCancellingTransactionId(transactionId);
 
+    const cancelCode = window.prompt('Enter cancellation code:');
+    if (!cancelCode) {
+      setCancellingTransactionId(null);
+      return;
+    }
+
     const reason = window.prompt('Cancellation reason (optional):', '') ?? undefined;
-    const result = await cancelTransaction(transactionId, reason);
+    const result = await cancelTransaction(transactionId, reason, cancelCode);
 
     if (!result.success) {
       pushNotification({

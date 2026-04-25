@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { requireRequestUser } from '@/lib/request-user';
 import { supabaseServer } from '@/lib/supabase-server';
+import type { Activity } from '@/types/activity';
 
 export default async function VendorDashboardPage() {
   const user = await requireRequestUser();
@@ -13,20 +14,21 @@ export default async function VendorDashboardPage() {
     .from('activities')
     .select('*')
     .eq('vendor_id', user.id);
+  const vendorActivities = (activities ?? []) as Activity[];
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-[1280px] p-4 text-slate-800 md:p-6 lg:p-8">
       <div className="mb-6 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Vendor Dashboard</h1>
-          <p className="text-sm text-slate-500">Welcome, {user.display_name}. Manage your activities and view reports here.</p>
+          <p className="text-sm text-slate-500">Welcome, {user.displayName}. Manage your activities and view reports here.</p>
         </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="text-sm font-medium text-slate-500 uppercase tracking-widest mb-1">Your Activities</div>
-          <div className="text-3xl font-bold text-slate-900">{activities?.length || 0}</div>
+          <div className="text-3xl font-bold text-slate-900">{vendorActivities.length}</div>
         </div>
       </div>
 
@@ -45,8 +47,8 @@ export default async function VendorDashboardPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {activities && activities.length > 0 ? (
-                activities.map((activity) => (
+              {vendorActivities.length > 0 ? (
+                vendorActivities.map((activity) => (
                   <tr key={activity.id} className="hover:bg-slate-50/50">
                     <td className="px-6 py-4 font-medium text-slate-900">{activity.name}</td>
                     <td className="px-6 py-4">LKR {activity.local_price}</td>

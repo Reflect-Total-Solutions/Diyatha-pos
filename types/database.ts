@@ -105,6 +105,7 @@ export interface Database {
 					description?: string | null;
 					category_id?: string | null;
 					image_url?: string | null;
+					vendor_id?: string | null;
 					local_price?: number;
 					foreign_price?: number;
 					is_active?: boolean;
@@ -118,6 +119,7 @@ export interface Database {
 					description?: string | null;
 					category_id?: string | null;
 					image_url?: string | null;
+					vendor_id?: string | null;
 					local_price?: number;
 					foreign_price?: number;
 					is_active?: boolean;

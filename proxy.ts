@@ -34,7 +34,8 @@ function needsVendorOnly(pathname: string): boolean {
 }
 
 function needsAdminOrVendor(pathname: string): boolean {
-  return pathname.startsWith('/admin/reports') || pathname.startsWith('/api/reports');
+  // Let reports API remain open explicitly - but the UI shouldn't reach the admin pages
+  return pathname.startsWith('/api/reports') || pathname.startsWith('/api/vendor/reports');
 }
 
 function isPosRoute(pathname: string): boolean {

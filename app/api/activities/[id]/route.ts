@@ -168,6 +168,10 @@ export async function PUT(
       updatePayload.category_id = validation.data.category_id;
     }
 
+    if (validation.data.vendor_id !== undefined) {
+      updatePayload.vendor_id = validation.data.vendor_id;
+    }
+
     if (validation.data.local_price !== undefined) {
       updatePayload.local_price = validation.data.local_price;
     }

@@ -8,6 +8,7 @@ import ImageUpload from '@/components/admin/ImageUpload';
 import { Button } from '@/components/ui/button';
 import type { Activity } from '@/types/activity';
 import type { Category } from '@/types/category';
+import type { User } from '@/types/user';
 
 type ListResponse<T> = {
   data?: T[];
@@ -23,6 +24,7 @@ export default function CreateActivityPage() {
   const router = useRouter();
 
   const [categories, setCategories] = useState<Category[]>([]);
+  const [vendors, setVendors] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,6 +32,7 @@ export default function CreateActivityPage() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [categoryId, setCategoryId] = useState('');
+  const [vendorId, setVendorId] = useState('');
   const [localPrice, setLocalPrice] = useState('500');
   const [foreignPrice, setForeignPrice] = useState('750');
   const [imageUrl, setImageUrl] = useState('');
@@ -39,38 +42,34 @@ export default function CreateActivityPage() {
   useEffect(() => {
     let active = true;
 
-    async function loadCategories() {
+        async function loadData() {
       setIsLoading(true);
-
       try {
-        const response = await fetch('/api/categories?include_inactive=true&limit=500', {
-          method: 'GET',
-          cache: 'no-store',
-        });
-
-        const payload = (await response.json()) as ListResponse<Category>;
-
-        if (!response.ok) {
-          if (!active) return;
-          setError(payload.error ?? 'Unable to load categories');
+        const [catRes, userRes] = await Promise.all([
+          fetch('/api/categories?include_inactive=true&limit=500', { method: 'GET', cache: 'no-store' }),
+          fetch('/api/admin/users?role=vendor&limit=500', { method: 'GET', cache: 'no-store' })
+        ]);
+        const catPayload = (await catRes.json()) as ListResponse<Category>;
+        const userPayload = (await userRes.json()) as ListResponse<User>;
+        if (!active) return;
+        if (!catRes.ok) {
+          setError(catPayload.error ?? 'Unable to load categories');
           setCategories([]);
           return;
         }
-
-        if (!active) return;
-        setCategories(payload.data ?? []);
+        setCategories(catPayload.data ?? []);
+        setVendors(userPayload.data ?? []);
       } catch {
         if (!active) return;
         setCategories([]);
-        setError('Unable to load categories');
+        setVendors([]);
+        setError('Unable to load options');
       } finally {
-        if (active) {
-          setIsLoading(false);
-        }
+        if (active) setIsLoading(false);
       }
     }
 
-    void loadCategories();
+    void loadData();
 
     return () => {
       active = false;
@@ -114,6 +113,7 @@ export default function CreateActivityPage() {
                   name,
                   description: description.trim() || undefined,
                   category_id: categoryId || undefined,
+                    vendor_id: vendorId || undefined,
                   local_price: Number(localPrice),
                   foreign_price: Number(foreignPrice),
                   image_url: imageUrl.trim() || undefined,
@@ -166,6 +166,23 @@ export default function CreateActivityPage() {
               </select>
             </div>
             <div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Vendor (Optional)</label>
+                <select
+                  value={vendorId}
+                  onChange={(event) => setVendorId(event.target.value)}
+                  className="h-10 w-full rounded-md border border-slate-300 px-3 text-sm"
+                  disabled={isLoading}
+                >
+                  <option value="">No vendor</option>
+                  {vendors.map((vendor) => (
+                    <option key={vendor.id} value={vendor.id}>
+                      {vendor.display_name} ({vendor.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="hidden"></div>
               <label className="mb-1 block text-sm font-medium text-slate-700">Local Price</label>
               <input
                 type="number"
@@ -238,3 +255,7 @@ export default function CreateActivityPage() {
     </main>
   );
 }
+
+
+
+

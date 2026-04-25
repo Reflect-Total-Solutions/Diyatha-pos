@@ -50,7 +50,7 @@ function roleFromClaims(user: User): UserRole | null {
   const userRole = user.user_metadata?.role;
   const candidate = appRole ?? userRole;
 
-  if (candidate === 'admin' || candidate === 'cashier') {
+  if (candidate === 'admin' || candidate === 'cashier' || candidate === 'vendor') {
     return candidate;
   }
 
@@ -68,7 +68,7 @@ async function resolveUserRole(user: User): Promise<UserRole | null> {
 
   if (
     !error &&
-    (userRoleRecord?.role === 'admin' || userRoleRecord?.role === 'cashier')
+    (userRoleRecord?.role === 'admin' || userRoleRecord?.role === 'cashier' || userRoleRecord?.role === 'vendor')
   ) {
     return userRoleRecord.role;
   }
@@ -92,12 +92,12 @@ export async function requireAuth(request: Request): Promise<User> {
   return data.user;
 }
 
-export async function requireAdminAuth(request: Request): Promise<User> {
+export async function requireAdminOrVendorAuth(request: Request): Promise<User> {
   const user = await requireAuth(request);
   const role = await resolveUserRole(user);
 
-  if (role !== 'admin') {
-    throw new ForbiddenError('Admin privileges required');
+  if (role !== 'admin' && role !== 'vendor') {
+    throw new ForbiddenError('Admin or Vendor privileges required');
   }
 
   return user;

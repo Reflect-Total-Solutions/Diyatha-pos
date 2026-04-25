@@ -3,7 +3,7 @@
  * Represents a system user (cashier or admin)
  */
 
-export type UserRole = 'cashier' | 'admin';
+export type UserRole = 'cashier' | 'admin' | 'vendor';
 
 export interface User {
   id: string;

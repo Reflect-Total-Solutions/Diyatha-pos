@@ -140,6 +140,7 @@ export default function UserForm({
           >
             <option value="cashier">Cashier</option>
             <option value="admin">Admin</option>
+            <option value="vendor">Vendor</option>
           </select>
         </div>
 

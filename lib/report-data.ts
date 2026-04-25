@@ -121,8 +121,8 @@ export function parseReportQueryParams(url: string): ReportQueryParams {
   };
 }
 
-function ensureAdmin(requestUser: RequestUserContext) {
-  if (requestUser.role !== 'admin') {
+function ensureAdminOrVendor(requestUser: RequestUserContext) {
+  if (requestUser.role !== 'admin' && requestUser.role !== 'vendor') {
     throw new ForbiddenError('Forbidden');
   }
 }
@@ -177,7 +177,9 @@ export async function fetchDailyReportData(
     }
   }
 
-  if (requestUser.role !== 'admin') {
+  if (requestUser.role === 'vendor') {
+    query = query.eq('vendor_id', requestUser.id);
+  } else if (requestUser.role !== 'admin') {
     query = query.eq('cashier_id', requestUser.id);
   } else if (params.cashier_id) {
     query = query.eq('cashier_id', params.cashier_id);
@@ -307,7 +309,7 @@ export async function fetchActivityReportData(
   requestUser: RequestUserContext,
   params: ReportQueryParams
 ): Promise<ActivityReportRow[]> {
-  ensureAdmin(requestUser);
+  ensureAdminOrVendor(requestUser);
 
   let query = supabase
     .from('daily_summary')
@@ -326,7 +328,8 @@ export async function fetchActivityReportData(
     }
   }
 
-  if (params.activity_id) {
+  if (requestUser.role === 'vendor') { query = query.eq('vendor_id', requestUser.id); }
+    if (params.activity_id) {
     query = query.eq('activity_id', params.activity_id);
   }
 
@@ -386,7 +389,7 @@ export async function fetchCashierReportData(
   requestUser: RequestUserContext,
   params: ReportQueryParams
 ): Promise<CashierReportRow[]> {
-  ensureAdmin(requestUser);
+  ensureAdminOrVendor(requestUser);
 
   let query = supabase
     .from('daily_summary')
@@ -497,7 +500,7 @@ export async function fetchTransactionsReportData(
   total: number;
   totalPages: number;
 }> {
-  ensureAdmin(requestUser);
+  ensureAdminOrVendor(requestUser);
 
   const { page, limit } = clampPagination(params.page, params.limit);
   const offset = (page - 1) * limit;
@@ -512,7 +515,8 @@ export async function fetchTransactionsReportData(
     query = query.eq('cashier_id', params.cashier_id);
   }
 
-  if (params.activity_id) {
+  if (requestUser.role === 'vendor') { query = query.eq('vendor_id', requestUser.id); }
+    if (params.activity_id) {
     query = query.eq('activity_id', params.activity_id);
   }
 

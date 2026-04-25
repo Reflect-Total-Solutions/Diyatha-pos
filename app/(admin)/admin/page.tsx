@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
 import { 
   Users, 
   Activity, 
@@ -29,9 +31,17 @@ type MaintenancePayload = {
 };
 
 export default function AdminDashboardPage() {
+  const router = useRouter();
+  const { user } = useAuth();
   const [data, setData] = useState<MaintenancePayload | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user?.role === 'vendor') {
+      router.push('/admin/reports');
+    }
+  }, [user, router]);
 
   async function loadData() {
     setIsLoading(true);

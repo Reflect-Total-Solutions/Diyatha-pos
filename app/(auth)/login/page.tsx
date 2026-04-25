@@ -14,9 +14,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
         City of Wonder
       </p>
-      <h1 className="mt-3 text-2xl font-semibold text-slate-900">Cashier Login</h1>
+      <h1 className="mt-3 text-2xl font-semibold text-slate-900">System Login</h1>
       <p className="mt-2 text-sm text-slate-600">
-        Sign in to access the POS dashboard and activity billing.
+        Sign in to access the system dashboard.
       </p>
       <LoginForm redirectTo={redirectTo} />
     </div>

@@ -31,7 +31,7 @@ export default function LoginForm({ redirectTo }: LoginFormProps) {
       const payload = (await response.json()) as {
         data?: {
           user?: {
-            role?: 'admin' | 'cashier';
+            role?: 'admin' | 'cashier' | 'vendor';
           };
         };
         error?: string;
@@ -44,12 +44,15 @@ export default function LoginForm({ redirectTo }: LoginFormProps) {
       }
 
       const isAdmin = payload.data?.user?.role === 'admin';
+      const isVendor = payload.data?.user?.role === 'vendor';
+      let defaultRedirect = '/dashboard';
+      if (isAdmin) defaultRedirect = '/admin';
+      if (isVendor) defaultRedirect = '/admin/vendor'; 
+
       const targetRedirect =
-        redirectTo && !(isAdmin && redirectTo === '/dashboard')
+        redirectTo && !((isAdmin || isVendor) && redirectTo === '/dashboard')
           ? redirectTo
-          : isAdmin
-            ? '/admin'
-            : '/dashboard';
+          : defaultRedirect;
 
       router.push(targetRedirect);
       router.refresh();

@@ -8,6 +8,7 @@ export interface Activity {
   name: string;
   description?: string | null;
   category_id?: string | null;
+  vendor_id?: string | null;
   image_url?: string | null;
   local_price: number;
   foreign_price: number;
@@ -19,12 +20,12 @@ export interface Activity {
 
 export type CreateActivityRequest = Pick<
   Activity,
-  'name' | 'category_id' | 'image_url' | 'local_price' | 'foreign_price' | 'description'
+  'name' | 'category_id' | 'vendor_id' | 'image_url' | 'local_price' | 'foreign_price' | 'description'
 > & {
   is_active?: boolean;
   display_order?: number;
 };
 
 export type UpdateActivityRequest = Partial<
-  Pick<Activity, 'name' | 'description' | 'category_id' | 'image_url' | 'local_price' | 'foreign_price' | 'is_active' | 'display_order'>
+  Pick<Activity, 'name' | 'description' | 'category_id' | 'vendor_id' | 'image_url' | 'local_price' | 'foreign_price' | 'is_active' | 'display_order'>
 >;

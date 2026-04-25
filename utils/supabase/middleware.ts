@@ -5,7 +5,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-type UserRole = 'admin' | 'cashier' | null;
+type UserRole = 'admin' | 'cashier' | 'vendor' | null;
 
 export const createClient = async (
   request: NextRequest
@@ -47,7 +47,7 @@ export const createClient = async (
       .maybeSingle();
 
     const role = (data as { role?: string } | null)?.role;
-    userRole = role === 'admin' || role === 'cashier' ? role : null;
+    userRole = role === 'admin' || role === 'cashier' || role === 'vendor' ? role : null;
   }
 
   return {

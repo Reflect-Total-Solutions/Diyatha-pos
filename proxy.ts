@@ -19,7 +19,26 @@ function needsAuth(pathname: string): boolean {
 }
 
 function needsAdmin(pathname: string): boolean {
+  // Vendor section and reports are allowed for vendors
+  if (pathname.startsWith('/admin/vendor') || pathname.startsWith('/api/vendor')) {
+    return false;
+  }
+  if (pathname.startsWith('/admin/reports') || pathname.startsWith('/api/reports')) {
+    return false;
+  }
   return pathname.startsWith('/admin') || pathname.startsWith('/api/admin');
+}
+
+function needsVendorOnly(pathname: string): boolean {
+  return pathname.startsWith('/admin/vendor') || pathname.startsWith('/api/vendor');
+}
+
+function needsAdminOrVendor(pathname: string): boolean {
+  return pathname.startsWith('/admin/reports') || pathname.startsWith('/api/reports');
+}
+
+function isPosRoute(pathname: string): boolean {
+  return pathname.startsWith('/dashboard') || pathname.startsWith('/api/transactions') || pathname.startsWith('/api/print');
 }
 
 export default async function proxy(request: NextRequest) {
@@ -48,6 +67,27 @@ export default async function proxy(request: NextRequest) {
     }
 
     return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+
+  if (needsVendorOnly(pathname) && role !== 'vendor' && role !== 'admin') {
+    if (isApiRequest(pathname)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+    return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+
+  if (needsAdminOrVendor(pathname) && role !== 'vendor' && role !== 'admin') {
+    if (isApiRequest(pathname)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+    return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+
+  if (isPosRoute(pathname) && role === 'vendor') {
+    if (isApiRequest(pathname)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+    return NextResponse.redirect(new URL('/admin/vendor', request.url));
   }
 
   return supabaseResponse;

@@ -8,6 +8,7 @@ import ImageUpload from '@/components/admin/ImageUpload';
 import { Button } from '@/components/ui/button';
 import type { Activity } from '@/types/activity';
 import type { Category } from '@/types/category';
+import type { User } from '@/types/user';
 
 type SingleResponse<T> = {
   data?: T;
@@ -26,6 +27,7 @@ export default function ActivityDetailPage() {
 
   const [activity, setActivity] = useState<Activity | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [vendors, setVendors] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -34,6 +36,7 @@ export default function ActivityDetailPage() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [categoryId, setCategoryId] = useState('');
+  const [vendorId, setVendorId] = useState('');
   const [localPrice, setLocalPrice] = useState('0');
   const [foreignPrice, setForeignPrice] = useState('0');
   const [imageUrl, setImageUrl] = useState('');
@@ -54,7 +57,7 @@ export default function ActivityDetailPage() {
       setError(null);
 
       try {
-        const [activityResponse, categoriesResponse] = await Promise.all([
+        const [activityResponse, categoriesResponse, vendorsResponse] = await Promise.all([
           fetch(`/api/activities/${activityId}`, {
             method: 'GET',
             cache: 'no-store',
@@ -63,10 +66,15 @@ export default function ActivityDetailPage() {
             method: 'GET',
             cache: 'no-store',
           }),
+          fetch('/api/admin/users?role=vendor&limit=500', {
+            method: 'GET',
+            cache: 'no-store',
+          }),
         ]);
 
         const activityPayload = (await activityResponse.json()) as SingleResponse<Activity>;
         const categoriesPayload = (await categoriesResponse.json()) as ListResponse<Category>;
+          const vendorsPayload = (await vendorsResponse.json()) as ListResponse<User>;
 
         if (!activityResponse.ok || !activityPayload.data) {
           if (!active) return;
@@ -79,6 +87,8 @@ export default function ActivityDetailPage() {
 
         setActivity(activityPayload.data);
         setCategories(categoriesPayload.data ?? []);
+          setVendors(vendorsPayload.data ?? []);
+          setVendorId(activityPayload.data.vendor_id ?? '');
         setName(activityPayload.data.name);
         setDescription(activityPayload.data.description ?? '');
         setCategoryId(activityPayload.data.category_id ?? '');
@@ -145,6 +155,7 @@ export default function ActivityDetailPage() {
                     name,
                     description: description.trim() || '',
                     category_id: categoryId || null,
+                    vendor_id: vendorId || null,
                     local_price: Number(localPrice),
                     foreign_price: Number(foreignPrice),
                     image_url: imageUrl.trim() || null,
@@ -191,6 +202,21 @@ export default function ActivityDetailPage() {
                   {categories.map((category) => (
                     <option key={category.id} value={category.id}>
                       {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Vendor</label>
+                <select
+                  value={vendorId}
+                  onChange={(event) => setVendorId(event.target.value)}
+                  className="h-10 w-full rounded-md border border-slate-300 px-3 text-sm"
+                >
+                  <option value="">No vendor</option>
+                  {vendors.map((vendor) => (
+                    <option key={vendor.id} value={vendor.id}>
+                      {vendor.display_name} ({vendor.email})
                     </option>
                   ))}
                 </select>
@@ -307,3 +333,6 @@ export default function ActivityDetailPage() {
     </main>
   );
 }
+
+
+

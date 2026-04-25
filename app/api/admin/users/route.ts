@@ -29,7 +29,7 @@ function parseListFilters(url: string) {
     limit,
     query: searchParams.get('q')?.trim() || undefined,
     role:
-      roleParam === 'admin' || roleParam === 'cashier'
+      roleParam === 'admin' || roleParam === 'cashier' || roleParam === 'vendor'
         ? roleParam
         : undefined,
     isActive:

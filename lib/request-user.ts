@@ -41,10 +41,20 @@ export async function requireRequestUser(): Promise<RequestUserContext> {
   };
 }
 
-export async function requireAdminRequestUser(): Promise<RequestUserContext> {
+export async function requireAdminRequestUser(): Promise<RequestUserContext> {  
   const user = await requireRequestUser();
 
   if (user.role !== 'admin') {
+    throw new ForbiddenError('Forbidden');
+  }
+
+  return user;
+}
+
+export async function requireAdminOrVendorRequestUser(): Promise<RequestUserContext> {  
+  const user = await requireRequestUser();
+
+  if (user.role !== 'admin' && user.role !== 'vendor') {
     throw new ForbiddenError('Forbidden');
   }
 

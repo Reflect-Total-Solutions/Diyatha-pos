@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
 import {
   LayoutDashboard,
   Users,
@@ -24,21 +25,31 @@ const adminLinks = [
   { href: '/admin/reports', label: 'Reports', icon: LineChart },
   { href: '/admin/audit-log', label: 'Audit Log', icon: ClipboardList },
   { href: '/admin/maintenance', label: 'Maintenance', icon: Settings },
-  // { href: '/dashboard', label: 'POS Dashboard', icon: Store },
 ];
 
 export default function AdminSidebar() {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const isVendor = user?.role === 'vendor';
+
+  const visibleLinks = isVendor 
+    ? [
+        { href: '/admin/vendor', label: 'Dashboard', icon: LayoutDashboard },
+        { href: '/admin/vendor/reports', label: 'Reports', icon: LineChart }
+      ]
+    : adminLinks;
 
   return (
     <aside className="w-full lg:w-64 bg-white border border-slate-200 text-slate-800 rounded-[1.25rem] p-5 shadow-sm h-fit lg:sticky lg:top-8">
       <div className="mb-6 px-1">
-        <h2 className="text-xl font-bold tracking-tight text-slate-900 mb-1">Admin Panel</h2>
+        <h2 className="text-xl font-bold tracking-tight text-slate-900 mb-1">
+          {isVendor ? 'Vendor Panel' : 'Admin Panel'}
+        </h2>
         <p className="text-xs font-medium text-slate-500">Management & Operations</p>
       </div>
 
       <nav className="space-y-1">
-        {adminLinks.map((link) => {
+        {visibleLinks.map((link) => {
           const isActive = pathname === link.href || (link.href !== '/admin' && pathname.startsWith(link.href));
           const Icon = link.icon;
           

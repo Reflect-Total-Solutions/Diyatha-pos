@@ -117,7 +117,7 @@ export type PrintRequestInput = z.infer<typeof PrintRequestSchema>;
 export const CreateUserSchema = z.object({
   email: z.string().email('Invalid email address'),
   display_name: z.string().min(1, 'Display name is required').max(100, 'Name must be 100 characters or less'),
-  role: z.enum(['cashier', 'admin']).describe('Role must be "cashier" or "admin"'),
+  role: z.enum(['cashier', 'admin', 'vendor']).describe('Role must be "cashier", "admin", or "vendor"'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   phone: z.string().optional(),
   is_active: z.boolean().optional(),
@@ -129,7 +129,7 @@ export const UpdateUserSchema = z.object({
   display_name: z.string().min(1, 'Name is required').max(100, 'Name must be 100 characters or less').optional(),
   email: z.string().email('Invalid email address').optional(),
   phone: z.string().optional(),
-  role: z.enum(['cashier', 'admin']).describe('Role must be "cashier" or "admin"').optional(),
+  role: z.enum(['cashier', 'admin', 'vendor']).describe('Role must be "cashier", "admin", or "vendor"').optional(),
   is_active: z.boolean().optional(),
 });
 

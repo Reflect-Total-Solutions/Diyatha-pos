@@ -429,7 +429,7 @@ export interface Database {
 			};
 		};
 		Enums: {
-			user_role: 'cashier' | 'admin';
+			user_role: 'cashier' | 'admin' | 'vendor';
 			price_type: 'local' | 'foreign';
 			print_status: 'pending' | 'printed' | 'failed';
 		};

@@ -294,7 +294,7 @@ export async function DELETE(
 
     const { data, error } = await supabaseServer
       .from('activities')
-      .delete()
+      .update({ deleted_at: new Date().toISOString() } as never)
       .eq('id', id)
       .select('id')
       .maybeSingle();

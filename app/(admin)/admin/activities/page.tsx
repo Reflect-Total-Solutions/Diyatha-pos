@@ -106,7 +106,7 @@ export default function AdminActivitiesPage() {
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
+      <div className="mt-4 flex flex-wrap gap-4 items-center">
           <select
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value as 'all' | 'active' | 'inactive')}

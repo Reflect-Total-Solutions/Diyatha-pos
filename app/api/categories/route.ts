@@ -3,7 +3,7 @@ import { toApiError } from '@/lib/errors';
 import { rateLimit } from '@/lib/rateLimit';
 import { requireRequestUser } from '@/lib/request-user';
 import { CategorySchema, validateInput } from '@/lib/schemas';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { createSupabaseServerClient, supabaseServer } from '@/lib/supabase-server';
 import type { Database } from '@/types/database';
 
 export const runtime = 'nodejs';
@@ -54,7 +54,9 @@ export async function GET(request: Request) {
     const offset = (page - 1) * limit;
     const isAdmin = user.role === 'admin';
 
-    let query = supabase
+    const client = isAdmin ? supabaseServer : supabase;
+
+    let query = client
       .from('categories')
       .select('*', { count: 'exact' })
       .order('name', { ascending: true })

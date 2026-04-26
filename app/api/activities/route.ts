@@ -3,7 +3,7 @@ import { toApiError } from '@/lib/errors';
 import { rateLimit } from '@/lib/rateLimit';
 import { requireRequestUser } from '@/lib/request-user';
 import { ActivitySchema, validateInput } from '@/lib/schemas';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { createSupabaseServerClient, supabaseServer } from '@/lib/supabase-server';
 import type { Database } from '@/types/database';
 
 export const runtime = 'nodejs';
@@ -27,6 +27,7 @@ function parsePagination(url: string) {
     limit,
     categoryId: searchParams.get('category_id') ?? undefined,
     includeInactive: searchParams.get('include_inactive') === 'true',
+    isActive: searchParams.get('is_active'),
   };
 }
 
@@ -66,13 +67,16 @@ export async function GET(request: Request) {
       );
     }
 
-    const { page, limit, categoryId, includeInactive } = parsePagination(request.url);
+    const { page, limit, categoryId, includeInactive, isActive } = parsePagination(request.url);
     const offset = (page - 1) * limit;
     const isAdmin = user.role === 'admin';
 
-    let query = supabase
+    const client = isAdmin ? supabaseServer : supabase;
+
+    let query = client
       .from('activities')
       .select('*', { count: 'exact' })
+      .is('deleted_at', null)
       .order('display_order', { ascending: true })
       .order('name', { ascending: true })
       .range(offset, offset + limit - 1);
@@ -81,7 +85,11 @@ export async function GET(request: Request) {
       query = query.eq('category_id', categoryId);
     }
 
-    if (!isAdmin || !includeInactive) {
+    if (isActive === 'false') {
+      query = query.eq('is_active', false);
+    } else if (isActive === 'true') {
+      query = query.eq('is_active', true);
+    } else if (!isAdmin || !includeInactive) {
       query = query.eq('is_active', true);
     }
 

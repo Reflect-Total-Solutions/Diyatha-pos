@@ -63,6 +63,17 @@ export async function POST(request: Request) {
     .eq('id', data.user.id)
     .maybeSingle();
 
+  if (profile && profile.is_active === false) {
+    await supabase.auth.signOut();
+    return Response.json(
+      {
+        error: 'Your account is deactivated. Please contact an administrator.',
+        code: ERROR_CODES.ACCOUNT_LOCKED,
+      },
+      { status: HTTP_STATUS.FORBIDDEN }
+    );
+  }
+
   const appUser = toAppUser(data.user, profile ?? null);
 
   return Response.json(

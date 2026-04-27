@@ -63,7 +63,7 @@ export async function POST(request: Request) {
     .eq('id', data.user.id)
     .maybeSingle();
 
-  if (profile && profile.is_active === false) {
+  if (profile && (profile as any).is_active === false) {
     await supabase.auth.signOut();
     return Response.json(
       {

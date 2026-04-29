@@ -246,6 +246,9 @@ export default function DashboardPage() {
       // Refresh transaction list right away
       void refetchTransactions();
 
+      // Trigger end customer group automatically after successful payment
+      void handleEndCustomer();
+
       // === Show generated tickets preview in the browser (temp) ===
       const ticketsToPreview: PrintedTicket[] = createdTransactions.map((t) => {
         const matchingCartItem = cartItems.find((c) => c.activity.id === t.activity_id && c.priceType === t.price_type);
@@ -516,7 +519,7 @@ export default function DashboardPage() {
               {isConfirmingPayment ? 'Processing...' : 'Checkout'}
             </Button>
 
-            <Button
+            {/* <Button
               type="button"
               variant="outline"
               disabled={!summary.currentGroupId || isTransactionsMutating}
@@ -524,7 +527,7 @@ export default function DashboardPage() {
               className="mt-2 w-full h-11 rounded-xl border-2 border-slate-400 font-semibold text-slate-700 hover:bg-slate-100"
             >
               End Customer
-            </Button>
+            </Button> */}
           </div>
 
           <DailySummary

@@ -120,7 +120,7 @@ export default function TransactionHistory({
                     <td className="px-4 py-3 text-slate-700 font-semibold">{formatTime(transaction.created_at)}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1.5 flex-wrap">
-                        {onReprintGroup && !transaction.cancelled_at && (
+                        {/* {onReprintGroup && !transaction.cancelled_at && (
                           <Button
                             type="button"
                             size="xs"
@@ -148,7 +148,7 @@ export default function TransactionHistory({
                           onClick={() => onCancelTransaction(transaction.id)}
                         >
                           {cancellingTransactionId === transaction.id ? 'Cancelling...' : 'Cancel'}
-                        </Button>
+                        </Button> */}
                       </div>
                     </td>
                   </tr>

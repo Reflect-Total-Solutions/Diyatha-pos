@@ -7,6 +7,8 @@ import type { Transaction } from '@/types/transaction';
 type TransactionHistoryItem = Transaction & {
   token_number?: string | null;
   exchanged_to_transaction_id?: string | null;
+  exchanged_from_transaction_id?: string | null;
+  is_exchanged?: boolean;
 };
 
 type TransactionHistoryProps = {
@@ -129,7 +131,7 @@ export default function TransactionHistory({
                     <td className="px-4 py-3 text-slate-700 font-semibold">{formatTime(transaction.created_at)}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1.5 flex-wrap">
-                        {onExchangeTransaction && !transaction.cancelled_at && !transaction.exchanged_to_transaction_id && (
+                        {onExchangeTransaction && !transaction.cancelled_at && !transaction.is_exchanged && !transaction.exchanged_to_transaction_id && !transaction.exchanged_from_transaction_id && (
                           <Button
                             type="button"
                             size="xs"

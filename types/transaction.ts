@@ -23,6 +23,7 @@ export interface Transaction {
   cancelled_at?: string | null;
   exchanged_to_transaction_id?: string | null;
   exchanged_from_transaction_id?: string | null;
+  is_exchanged?: boolean;
   created_at: string;
   updated_at: string;
 }

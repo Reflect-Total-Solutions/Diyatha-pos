@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { requireRequestUser } from '@/lib/request-user';
 import { supabaseServer } from '@/lib/supabase-server';
 import { resequenceGroupTransactions } from '@/lib/transactions';
-import { getColomboDates } from '@/lib/dateUtils';
 
 export async function POST(
   request: Request,
@@ -203,7 +202,6 @@ export async function POST(
     }
 
     // 7. Insert token row
-    const { utcNow } = getColomboDates();
     const { error: tokenErr } = await supabaseServer
       .from('tokens')
       .insert({
@@ -211,7 +209,7 @@ export async function POST(
         token_number: tokenNumber,
         token_index: tokenIndex,
         token_total: tokenTotal,
-        printed_at: utcNow.toISOString(),
+        printed_at: new Date().toISOString(),
       } as any);
 
     if (tokenErr) {
@@ -222,22 +220,27 @@ export async function POST(
       );
     }
 
-    // 8. Audit log (non-blocking — failures here shouldn't undo the exchange)
-    await supabaseServer.from('audit_log').insert({
-      user_id: user.id,
-      action: 'EXCHANGE',
-      entity_type: 'transaction',
-      entity_id: transactionId,
-      metadata: {
-        new_transaction_id: newTxn.id,
-        old_activity_id: original.activity_id,
-        new_activity_id: newActivityId,
-        amount: original.amount,
-        token_number: tokenNumber,
-        token_index: tokenIndex,
-        token_total: tokenTotal,
-      },
-    } as any);
+    // 8. Audit log — best-effort, must never cause a 500 that loses the
+    // already-committed exchange writes (no rollback possible at this stage).
+    try {
+      await supabaseServer.from('audit_log').insert({
+        user_id: user.id,
+        action: 'EXCHANGE',
+        entity_type: 'transaction',
+        entity_id: transactionId,
+        metadata: {
+          new_transaction_id: newTxn.id,
+          old_activity_id: original.activity_id,
+          new_activity_id: newActivityId,
+          amount: original.amount,
+          token_number: tokenNumber,
+          token_index: tokenIndex,
+          token_total: tokenTotal,
+        },
+      } as any);
+    } catch (auditErr) {
+      console.error('Exchange: audit_log insert failed (non-fatal):', auditErr);
+    }
 
     return NextResponse.json({
       success: true,

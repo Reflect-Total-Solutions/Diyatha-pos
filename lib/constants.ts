@@ -101,9 +101,9 @@ export const PRINTER_DISCOVERY_PORTS = [9100, 515, 631];
 
 // Date/Time
 export const TIMEZONE_COLOMBO = 'Asia/Colombo';
-export const DATE_FORMAT = 'DD-MM-YYYY';
-export const TIME_FORMAT = 'HH:mm:ss a';
-export const DATETIME_FORMAT = 'DD-MM-YYYY HH:mm:ss a';
+export const DATE_FORMAT = 'dd-MM-yyyy';
+export const TIME_FORMAT = 'hh:mm:ss a';
+export const DATETIME_FORMAT = 'dd-MM-yyyy hh:mm:ss a';
 
 // UI/UX
 export const TOAST_DURATION_MS = 5000;

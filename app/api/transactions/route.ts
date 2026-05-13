@@ -79,7 +79,10 @@ export async function GET(request: Request) {
     }
 
     if (!includeCancelled) {
-      query = query.is('cancelled_at', null);
+      // Hide hard-cancelled rows, but keep exchanged rows visible so the
+      // cashier sees the original ticket (with "Exchanged" badge + disabled
+      // Exchange button) instead of it vanishing after exchange.
+      query = query.or('cancelled_at.is.null,is_exchanged.eq.true');
     }
 
     if (startDate) {

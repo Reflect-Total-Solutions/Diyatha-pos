@@ -6,6 +6,8 @@ import type { Transaction } from "@/types/transaction";
 
 type TransactionSummaryItem = Transaction & {
   token_number?: string | null;
+  exchanged_to_transaction_id?: string | null;
+  exchanged_from_transaction_id?: string | null;
 };
 
 type DailySummaryProps = {
@@ -41,7 +43,18 @@ export default function DailySummary({
     let cardAmount = 0;
 
     for (const transaction of transactions) {
-      if (transaction.cancelled_at) {
+      // Skip the new replacement row from an exchange — the paid side is the
+      // original (cancelled + exchanged_to_transaction_id set), which we still
+      // count below. Including this row would double-count the same payment.
+      if (transaction.exchanged_from_transaction_id) {
+        continue;
+      }
+
+      const isExchanged = Boolean(
+        transaction.cancelled_at && transaction.exchanged_to_transaction_id
+      );
+
+      if (transaction.cancelled_at && !isExchanged) {
         cancelledCount += 1;
         continue;
       }

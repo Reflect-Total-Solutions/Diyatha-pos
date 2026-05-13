@@ -436,6 +436,14 @@ export interface Database {
 				Args: Record<string, never>;
 				Returns: undefined;
 			};
+			exchange_transaction: {
+				Args: {
+					p_transaction_id: string;
+					p_new_activity_id: string;
+					p_user_id: string;
+				};
+				Returns: Json;
+			};
 		};
 		Enums: {
 			user_role: 'cashier' | 'admin' | 'vendor';

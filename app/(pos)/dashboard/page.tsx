@@ -82,6 +82,11 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [cancellingTransactionId, setCancellingTransactionId] = useState<string | null>(null);
 
+  // Exchange state
+  const [exchangeTxnId, setExchangeTxnId] = useState<string | null>(null);
+  const [exchangeTargetActivityId, setExchangeTargetActivityId] = useState<string | null>(null);
+  const [isExchanging, setIsExchanging] = useState(false);
+
   useEffect(() => {
     const timers = notifications
       .filter((item) => item.durationMs !== 0)
@@ -302,6 +307,75 @@ export default function DashboardPage() {
     }
 
     setCancellingTransactionId(null);
+  }
+
+  function handleOpenExchangeModal(transactionId: string) {
+    setExchangeTxnId(transactionId);
+    setExchangeTargetActivityId(null);
+  }
+
+  function handleCloseExchangeModal() {
+    setExchangeTxnId(null);
+    setExchangeTargetActivityId(null);
+  }
+
+  async function handleConfirmExchange() {
+    if (!exchangeTxnId || !exchangeTargetActivityId) return;
+
+    setIsExchanging(true);
+
+    try {
+      const response = await fetch(`/api/transactions/${exchangeTxnId}/exchange`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ activity_id: exchangeTargetActivityId }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        pushNotification({
+          type: 'error',
+          title: 'Exchange failed',
+          message: result.error || 'Failed to exchange ticket.',
+        });
+      } else {
+        pushNotification({
+          type: 'success',
+          title: 'Ticket Exchanged',
+          message: 'The ticket was successfully exchanged.',
+        });
+
+        const t = result.new_transaction;
+        const fallbackName = activities.find((a) => a.id === t.activity_id)?.name ?? 'Unknown Activity';
+
+        setPreviewTickets([{
+          id: t.id,
+          token_number: t.token_number,
+          token_index: t.token_index,
+          token_total: t.token_total,
+          price_type: t.price_type,
+          amount: t.amount,
+          activityName: fallbackName,
+          cashierName: user?.display_name ?? 'Staff',
+          created_at: t.created_at,
+          txn_reference: t.txn_reference,
+        }]);
+
+        handleCloseExchangeModal();
+        void refetchTransactions();
+      }
+    } catch (error) {
+      pushNotification({
+        type: 'error',
+        title: 'Exchange request error',
+        message: 'Something went wrong while requesting exchange.',
+      });
+    } finally {
+      setIsExchanging(false);
+    }
   }
 
   async function handleEndCustomer() {
@@ -548,6 +622,7 @@ export default function DashboardPage() {
           isLoading={isTransactionsLoading}
           cancellingTransactionId={cancellingTransactionId}
           onCancelTransaction={handleCancelTransaction}
+          onExchangeTransaction={handleOpenExchangeModal}
           onReprintTransaction={(transactionId) => {
             const t = transactions.find((txn) => txn.id === transactionId);
             if (t) {
@@ -646,6 +721,61 @@ export default function DashboardPage() {
           setPreviewTickets([]);
         }}
       />
+
+      {exchangeTxnId && (
+        <div className="fixed inset-0 z-[65] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <h2 className="mb-4 text-xl font-bold text-slate-800">Exchange Ticket</h2>
+            
+            <div className="mb-4 text-sm text-slate-600">
+              <p>Select a new activity to exchange this ticket for.</p>
+              <p className="mt-1 font-semibold text-slate-800">Note: Only activities matching the exact original price are shown.</p>
+            </div>
+
+            <div className="mb-6 space-y-2">
+              <label className="text-sm font-semibold text-slate-700">New Activity</label>
+              <select
+                className="w-full rounded-xl border-2 border-slate-300 p-3 outline-none focus:border-blue-500"
+                value={exchangeTargetActivityId || ''}
+                onChange={(e) => setExchangeTargetActivityId(e.target.value)}
+                disabled={isExchanging}
+              >
+                <option value="" disabled>Select an activity</option>
+                {(() => {
+                  const originalTxn = transactions.find(t => t.id === exchangeTxnId);
+                  if (!originalTxn) return null;
+                  
+                  return activities
+                    .filter(a => {
+                      const activityPrice = originalTxn.price_type === 'local' ? a.local_price : a.foreign_price;
+                      return Number(activityPrice) === Number(originalTxn.amount);
+                    })
+                    .map(a => (
+                      <option key={a.id} value={a.id}>{a.name} ({formatCurrency(originalTxn.price_type === 'local' ? a.local_price : a.foreign_price)})</option>
+                    ));
+                })()}
+              </select>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <Button
+                variant="outline"
+                onClick={handleCloseExchangeModal}
+                disabled={isExchanging}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="bg-blue-600 font-bold text-white hover:bg-blue-700"
+                onClick={handleConfirmExchange}
+                disabled={!exchangeTargetActivityId || isExchanging}
+              >
+                {isExchanging ? 'Exchanging...' : 'Confirm Exchange'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

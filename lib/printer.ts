@@ -24,6 +24,7 @@ export type TicketPayload = {
   tokenIndex: number;
   tokenTotal: number;
   transactionCreatedAt: string;
+  isExchanged?: boolean;
 };
 
 const queue = {
@@ -60,6 +61,9 @@ function buildTicket(printer: ThermalPrinter, payload: TicketPayload) {
   printer.drawLine('=');
   printer.bold(true);
   printer.println('ACTIVITY TOKEN');
+  if (payload.isExchanged) {
+    printer.println('** EXCHANGED **');
+  }
   printer.bold(false);
   printer.println(payload.tokenNumber);
   printer.drawLine('=');

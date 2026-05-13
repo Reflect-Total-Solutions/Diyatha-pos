@@ -21,6 +21,8 @@ export interface Transaction {
   print_status: PrintStatus;
   printed_at?: string | null;
   cancelled_at?: string | null;
+  exchanged_to_transaction_id?: string | null;
+  exchanged_from_transaction_id?: string | null;
   created_at: string;
   updated_at: string;
 }

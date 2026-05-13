@@ -231,6 +231,7 @@ export async function POST(request: Request) {
         tokenIndex: existingTokenRecord?.token_index ?? tokenIndex,
         tokenTotal: existingTokenRecord?.token_total ?? tokenTotal,
         transactionCreatedAt: transactionRecord.created_at,
+        isExchanged: !!transactionRecord.exchanged_from_transaction_id,
       },
     });
 

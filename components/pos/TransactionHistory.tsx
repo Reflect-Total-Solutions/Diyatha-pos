@@ -6,6 +6,7 @@ import type { Transaction } from '@/types/transaction';
 
 type TransactionHistoryItem = Transaction & {
   token_number?: string | null;
+  exchanged_to_transaction_id?: string | null;
 };
 
 type TransactionHistoryProps = {
@@ -14,6 +15,7 @@ type TransactionHistoryProps = {
   searchQuery: string;
   onSearchQueryChange: (value: string) => void;
   onCancelTransaction: (transactionId: string) => void;
+  onExchangeTransaction?: (transactionId: string) => void;
   onReprintTransaction?: (transactionId: string) => void;
   onReprintGroup?: (groupId: string) => void;
   cancellingTransactionId?: string | null;
@@ -43,6 +45,7 @@ export default function TransactionHistory({
   searchQuery,
   onSearchQueryChange,
   onCancelTransaction,
+  onExchangeTransaction,
   onReprintTransaction,
   onReprintGroup,
   cancellingTransactionId = null,
@@ -108,9 +111,15 @@ export default function TransactionHistory({
                     <td className="px-4 py-3 text-slate-900 font-bold text-base">{formatCurrency(transaction.amount)}</td>
                     <td className="px-4 py-3">
                       {transaction.cancelled_at ? (
-                        <span className="rounded-lg border-2 border-amber-400 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-900 uppercase tracking-wider">
-                          Cancelled
-                        </span>
+                        transaction.exchanged_to_transaction_id ? (
+                          <span className="rounded-lg border-2 border-purple-400 bg-purple-50 px-3 py-1 text-xs font-bold text-purple-900 uppercase tracking-wider">
+                            Exchanged
+                          </span>
+                        ) : (
+                          <span className="rounded-lg border-2 border-amber-400 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-900 uppercase tracking-wider">
+                            Cancelled
+                          </span>
+                        )
                       ) : (
                         <span className="rounded-lg border-2 border-green-400 bg-green-50 px-3 py-1 text-xs font-bold text-green-900 uppercase tracking-wider">
                           Active
@@ -120,6 +129,18 @@ export default function TransactionHistory({
                     <td className="px-4 py-3 text-slate-700 font-semibold">{formatTime(transaction.created_at)}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                        {onExchangeTransaction && !transaction.cancelled_at && !transaction.exchanged_to_transaction_id && (
+                          <Button
+                            type="button"
+                            size="xs"
+                            variant="outline"
+                            className="bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-800 border-blue-200"
+                            disabled={cancellingTransactionId === transaction.id}
+                            onClick={() => onExchangeTransaction(transaction.id)}
+                          >
+                            Exchange
+                          </Button>
+                        )}
                         {/* {onReprintGroup && !transaction.cancelled_at && (
                           <Button
                             type="button"

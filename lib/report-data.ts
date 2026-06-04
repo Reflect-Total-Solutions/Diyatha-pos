@@ -312,7 +312,8 @@ export async function fetchActivityReportData(
 ): Promise<ActivityReportRow[]> {
   ensureAdminOrVendor(requestUser);
 
-  const { data, error } = await supabase.rpc('get_activity_report_data', {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any).rpc('get_activity_report_data', {
     p_from:        params.date ?? params.from ?? null,
     p_to:          params.date ?? params.to   ?? null,
     p_vendor_id:   requestUser.role === 'vendor' ? requestUser.id : null,
@@ -326,13 +327,13 @@ export async function fetchActivityReportData(
 
   return (data ?? []).map((row: Record<string, unknown>) => ({
     activity_id:   row.activity_id   as string,
-    activity_name: row.activity_name as string ?? `Activity ${(row.activity_id as string).slice(0, 8)}`,
-    local_count:   toNumber(row.local_count),
-    foreign_count: toNumber(row.foreign_count),
-    total_count:   toNumber(row.total_count),
-    local_total:   toNumber(row.local_total),
-    foreign_total: toNumber(row.foreign_total),
-    total_amount:  toNumber(row.total_amount),
+    activity_name: (row.activity_name as string | null) ?? `Activity ${(row.activity_id as string).slice(0, 8)}`,
+    local_count:   toNumber(row.local_count   as number | null),
+    foreign_count: toNumber(row.foreign_count as number | null),
+    total_count:   toNumber(row.total_count   as number | null),
+    local_total:   toNumber(row.local_total   as number | null),
+    foreign_total: toNumber(row.foreign_total as number | null),
+    total_amount:  toNumber(row.total_amount  as number | null),
   }));
 }
 

@@ -15,7 +15,7 @@ import {
 } from '@/lib/report-data';
 import { rateLimit } from '@/lib/rateLimit';
 import { requireAdminRequestUser } from '@/lib/request-user';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { supabaseServer } from '@/lib/supabase-server';
 import type {
   ActivityReportRow,
   CashierReportRow,
@@ -130,7 +130,6 @@ function getReportTitle(kind: ReportKind): string {
 export async function GET(request: Request) {
   try {
     const user = await requireAdminRequestUser();
-    const supabase = await createSupabaseServerClient();
 
     const allowed = rateLimit(
       `reports:export:${user.id}`,
@@ -154,22 +153,22 @@ export async function GET(request: Request) {
     let rows: ExportRow[] = [];
 
     if (reportKind === 'daily') {
-      rows = mapDailyRows(await fetchDailyReportData(supabase, user, filters));
+      rows = mapDailyRows(await fetchDailyReportData(supabaseServer, user, filters));
     }
 
     if (reportKind === 'activity') {
-      rows = mapActivityRows(await fetchActivityReportData(supabase, user, filters));
+      rows = mapActivityRows(await fetchActivityReportData(supabaseServer, user, filters));
     }
 
     if (reportKind === 'cashier') {
-      rows = mapCashierRows(await fetchCashierReportData(supabase, user, filters));
+      rows = mapCashierRows(await fetchCashierReportData(supabaseServer, user, filters));
     }
 
     if (reportKind === 'transactions') {
-      const transactions = await fetchTransactionsReportData(supabase, user, {
+      const transactions = await fetchTransactionsReportData(supabaseServer, user, {
         ...filters,
         page: 1,
-        limit: 1000,
+        limit: 50000,
       });
       rows = mapTransactionRows(transactions.data);
     }

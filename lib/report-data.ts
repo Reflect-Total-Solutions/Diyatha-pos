@@ -163,7 +163,8 @@ export async function fetchDailyReportData(
   let query = supabase
     .from('daily_summary')
     .select('*')
-    .order('sale_date', { ascending: false });
+    .order('sale_date', { ascending: false })
+    .limit(50000);
 
   if (params.date) {
     query = query.eq('sale_date', params.date);
@@ -311,77 +312,28 @@ export async function fetchActivityReportData(
 ): Promise<ActivityReportRow[]> {
   ensureAdminOrVendor(requestUser);
 
-  let query = supabase
-    .from('daily_summary')
-    .select('*')
-    .order('sale_date', { ascending: false });
-
-  if (params.date) {
-    query = query.eq('sale_date', params.date);
-  } else {
-    if (params.from) {
-      query = query.gte('sale_date', params.from);
-    }
-
-    if (params.to) {
-      query = query.lte('sale_date', params.to);
-    }
-  }
-
-  if (requestUser.role === 'vendor') { query = query.eq('vendor_id', requestUser.id); }
-    if (params.activity_id) {
-    query = query.eq('activity_id', params.activity_id);
-  }
-
-  if (params.cashier_id) {
-    query = query.eq('cashier_id', params.cashier_id);
-  }
-
-  const { data, error } = await query;
+  const { data, error } = await supabase.rpc('get_activity_report_data', {
+    p_from:        params.date ?? params.from ?? null,
+    p_to:          params.date ?? params.to   ?? null,
+    p_vendor_id:   requestUser.role === 'vendor' ? requestUser.id : null,
+    p_activity_id: params.activity_id ?? null,
+    p_cashier_id:  params.cashier_id  ?? null,
+  });
 
   if (error) {
     throw error;
   }
 
-  const rows = (data ?? []) as DailySummaryViewRow[];
-  const grouped = new Map<string, ActivityReportRow>();
-
-  for (const row of rows) {
-    if (!row.activity_id) {
-      continue;
-    }
-
-    const count = toNumber(row.count);
-    const amount = toNumber(row.total_amount);
-
-    const existing =
-      grouped.get(row.activity_id) ??
-      {
-        activity_id: row.activity_id,
-        activity_name: row.activity_name ?? `Activity ${row.activity_id.slice(0, 8)}`,
-        local_count: 0,
-        foreign_count: 0,
-        total_count: 0,
-        local_total: 0,
-        foreign_total: 0,
-        total_amount: 0,
-      };
-
-    existing.total_count += count;
-    existing.total_amount = Number((existing.total_amount + amount).toFixed(2));
-
-    if (row.price_type === 'local') {
-      existing.local_count += count;
-      existing.local_total = Number((existing.local_total + amount).toFixed(2));
-    } else if (row.price_type === 'foreign') {
-      existing.foreign_count += count;
-      existing.foreign_total = Number((existing.foreign_total + amount).toFixed(2));
-    }
-
-    grouped.set(row.activity_id, existing);
-  }
-
-  return Array.from(grouped.values()).sort((a, b) => b.total_amount - a.total_amount);
+  return (data ?? []).map((row: Record<string, unknown>) => ({
+    activity_id:   row.activity_id   as string,
+    activity_name: row.activity_name as string ?? `Activity ${(row.activity_id as string).slice(0, 8)}`,
+    local_count:   toNumber(row.local_count),
+    foreign_count: toNumber(row.foreign_count),
+    total_count:   toNumber(row.total_count),
+    local_total:   toNumber(row.local_total),
+    foreign_total: toNumber(row.foreign_total),
+    total_amount:  toNumber(row.total_amount),
+  }));
 }
 
 export async function fetchCashierReportData(
@@ -394,7 +346,8 @@ export async function fetchCashierReportData(
   let query = supabase
     .from('daily_summary')
     .select('*')
-    .order('sale_date', { ascending: false });
+    .order('sale_date', { ascending: false })
+    .limit(50000);
 
   if (params.date) {
     query = query.eq('sale_date', params.date);

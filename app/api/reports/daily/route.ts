@@ -6,7 +6,7 @@ import {
   parseReportQueryParams,
 } from '@/lib/report-data';
 import { requireRequestUser } from '@/lib/request-user';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { supabaseServer } from '@/lib/supabase-server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -14,7 +14,6 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
   try {
     const user = await requireRequestUser();
-    const supabase = await createSupabaseServerClient();
 
     const allowed = rateLimit(
       `reports:daily:${user.id}`,
@@ -33,7 +32,7 @@ export async function GET(request: Request) {
     }
 
     const filters = parseReportQueryParams(request.url);
-    const data = await fetchDailyReportData(supabase, user, filters);
+    const data = await fetchDailyReportData(supabaseServer, user, filters);
 
     return Response.json(
       {

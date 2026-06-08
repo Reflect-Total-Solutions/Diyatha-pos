@@ -5,6 +5,7 @@ import type { RequestUserContext } from '@/lib/request-user';
 import type { Database } from '@/types/database';
 import type {
   ActivityReportRow,
+  CashierActivityBreakdown,
   CashierReportRow,
   DailyActivityBreakdown,
   DailyReportRow,
@@ -344,72 +345,46 @@ export async function fetchCashierReportData(
 ): Promise<CashierReportRow[]> {
   ensureAdminOrVendor(requestUser);
 
-  let query = supabase
-    .from('daily_summary')
-    .select('*')
-    .order('sale_date', { ascending: false })
-    .limit(50000);
-
-  if (params.date) {
-    query = query.eq('sale_date', params.date);
-  } else {
-    if (params.from) {
-      query = query.gte('sale_date', params.from);
-    }
-
-    if (params.to) {
-      query = query.lte('sale_date', params.to);
-    }
-  }
-
-  if (params.cashier_id) {
-    query = query.eq('cashier_id', params.cashier_id);
-  }
-
-  const { data, error } = await query;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any).rpc('get_cashier_report_data', {
+    p_from:        params.date ?? params.from ?? null,
+    p_to:          params.date ?? params.to   ?? null,
+    p_vendor_id:   requestUser.role === 'vendor' ? requestUser.id : null,
+    p_cashier_id:  params.cashier_id ?? null,
+    p_activity_id: params.activity_id ?? null,
+  });
 
   if (error) {
     throw error;
   }
 
-  const rows = (data ?? []) as DailySummaryViewRow[];
-  const cashierIds = Array.from(
-    new Set(rows.map((row) => row.cashier_id).filter((value): value is string => Boolean(value)))
-  );
-
-  const cashierNameMap = new Map<string, string>();
-
-  if (cashierIds.length > 0) {
-    const { data: users, error: usersError } = await supabase
-      .from('users')
-      .select('id, display_name')
-      .in('id', cashierIds);
-
-    if (usersError) {
-      throw usersError;
+  // Group by cashier, with activities nested inside
+  const grouped = new Map<
+    string,
+    {
+      cashier_id: string;
+      cashier_name: string;
+      local_count: number;
+      foreign_count: number;
+      total_transactions: number;
+      local_total: number;
+      foreign_total: number;
+      cash_total: number;
+      card_total: number;
+      total_amount: number;
+      activities: CashierActivityBreakdown[];
     }
+  >();
 
-    for (const user of (users ?? []) as Array<{ id: string; display_name: string }>) {
-      cashierNameMap.set(user.id, user.display_name);
-    }
-  }
+  for (const row of (data ?? []) as Array<Record<string, unknown>>) {
+    const cashierId = row.cashier_id as string;
+    const activityId = row.activity_id as string;
 
-  const grouped = new Map<string, CashierReportRow>();
-
-  for (const row of rows) {
-    if (!row.cashier_id) {
-      continue;
-    }
-
-    const count = toNumber(row.count);
-    const amount = toNumber(row.total_amount);
-
-    const existing =
-      grouped.get(row.cashier_id) ??
-      {
-        cashier_id: row.cashier_id,
-        cashier_name:
-          cashierNameMap.get(row.cashier_id) ?? `Cashier ${row.cashier_id.slice(0, 8)}`,
+    // Get or create the cashier entry
+    if (!grouped.has(cashierId)) {
+      grouped.set(cashierId, {
+        cashier_id: cashierId,
+        cashier_name: (row.cashier_name as string | null) ?? `Cashier ${cashierId.slice(0, 8)}`,
         local_count: 0,
         foreign_count: 0,
         total_transactions: 0,
@@ -418,29 +393,52 @@ export async function fetchCashierReportData(
         cash_total: 0,
         card_total: 0,
         total_amount: 0,
-      };
-
-    existing.total_transactions += count;
-    existing.total_amount = Number((existing.total_amount + amount).toFixed(2));
-
-    if ((row as Record<string, unknown>).payment_method === 'card') {
-      existing.card_total = Number((existing.card_total + amount).toFixed(2));
-    } else {
-      existing.cash_total = Number((existing.cash_total + amount).toFixed(2));
+        activities: [],
+      });
     }
 
-    if (row.price_type === 'local') {
-      existing.local_count += count;
-      existing.local_total = Number((existing.local_total + amount).toFixed(2));
-    } else if (row.price_type === 'foreign') {
-      existing.foreign_count += count;
-      existing.foreign_total = Number((existing.foreign_total + amount).toFixed(2));
-    }
+    const cashier = grouped.get(cashierId)!;
 
-    grouped.set(row.cashier_id, existing);
+    // Accumulate cashier totals
+    const localCount = toNumber(row.local_count as number | null);
+    const foreignCount = toNumber(row.foreign_count as number | null);
+    const localTotal = toNumber(row.local_total as number | null);
+    const foreignTotal = toNumber(row.foreign_total as number | null);
+    const cashTotal = toNumber(row.cash_total as number | null);
+    const cardTotal = toNumber(row.card_total as number | null);
+    const total = toNumber(row.total_amount as number | null);
+
+    cashier.local_count += localCount;
+    cashier.foreign_count += foreignCount;
+    cashier.total_transactions += localCount + foreignCount;
+    cashier.local_total = Number((cashier.local_total + localTotal).toFixed(2));
+    cashier.foreign_total = Number((cashier.foreign_total + foreignTotal).toFixed(2));
+    cashier.cash_total = Number((cashier.cash_total + cashTotal).toFixed(2));
+    cashier.card_total = Number((cashier.card_total + cardTotal).toFixed(2));
+    cashier.total_amount = Number((cashier.total_amount + total).toFixed(2));
+
+    // Add activity breakdown
+    cashier.activities.push({
+      activity_id: activityId,
+      activity_name:
+        (row.activity_name as string | null) ?? `Activity ${activityId.slice(0, 8)}`,
+      local_count: localCount,
+      local_total: localTotal,
+      foreign_count: foreignCount,
+      foreign_total: foreignTotal,
+      cash_total: cashTotal,
+      card_total: cardTotal,
+      total_amount: total,
+    });
   }
 
-  return Array.from(grouped.values()).sort((a, b) => b.total_amount - a.total_amount);
+  // Convert to array and sort by total amount (desc)
+  return Array.from(grouped.values())
+    .map((cashier) => ({
+      ...cashier,
+      activities: cashier.activities.sort((a, b) => b.total_amount - a.total_amount),
+    }))
+    .sort((a, b) => b.total_amount - a.total_amount);
 }
 
 export async function fetchTransactionsReportData(

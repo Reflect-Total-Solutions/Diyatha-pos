@@ -39,6 +39,18 @@ export interface ActivityReportRow {
   total_amount: number;
 }
 
+export interface CashierActivityBreakdown {
+  activity_id: string;
+  activity_name: string;
+  local_count: number;
+  local_total: number;
+  foreign_count: number;
+  foreign_total: number;
+  cash_total: number;
+  card_total: number;
+  total_amount: number;
+}
+
 export interface CashierReportRow {
   cashier_id: string;
   cashier_name: string;
@@ -50,6 +62,7 @@ export interface CashierReportRow {
   cash_total: number;
   card_total: number;
   total_amount: number;
+  activities: CashierActivityBreakdown[];
 }
 
 export interface TransactionReportRow {

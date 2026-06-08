@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { formatInTimeZone } from 'date-fns-tz';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useReports } from '@/hooks/useReports';
 
@@ -24,6 +25,7 @@ export default function CashierReportPage() {
   const [from, setFrom] = useState<string>(getTodayDateValue());
   const [to, setTo] = useState<string>(getTodayDateValue());
   const [cashierId, setCashierId] = useState('');
+  const [expandedCashiers, setExpandedCashiers] = useState<Set<string>>(new Set());
 
   const filters = useMemo(
     () => ({
@@ -38,13 +40,23 @@ export default function CashierReportPage() {
     void loadCashierReport(filters);
   }, [filters, loadCashierReport]);
 
+  const toggleExpanded = (cashierId: string) => {
+    const newExpanded = new Set(expandedCashiers);
+    if (newExpanded.has(cashierId)) {
+      newExpanded.delete(cashierId);
+    } else {
+      newExpanded.add(cashierId);
+    }
+    setExpandedCashiers(newExpanded);
+  };
+
   return (
     <div>
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h2 className="text-xl font-semibold text-slate-900">Cashier Report</h2>
           <p className="mt-1 text-sm text-slate-600">
-            Revenue and transaction count grouped by cashier.
+            Revenue and transaction count grouped by cashier with activity breakdown.
           </p>
         </div>
 
@@ -131,19 +143,65 @@ export default function CashierReportPage() {
           </thead>
           <tbody className="divide-y divide-slate-100 bg-white">
             {cashier.map((row) => (
-              <tr key={row.cashier_id}>
-                <td className="px-3 py-2 text-slate-800">{row.cashier_name}</td>
-                <td className="px-3 py-2 text-right text-slate-800">{row.local_count}</td>
-                <td className="px-3 py-2 text-right text-slate-800">{row.foreign_count}</td>
-                <td className="px-3 py-2 text-right text-slate-800">{row.total_transactions}</td>
-                <td className="px-3 py-2 text-right text-slate-800">{row.cash_total.toFixed(2)}</td>
-                <td className="px-3 py-2 text-right text-slate-800">{row.card_total.toFixed(2)}</td>
-                <td className="px-3 py-2 text-right text-slate-800">{row.local_total.toFixed(2)}</td>
-                <td className="px-3 py-2 text-right text-slate-800">{row.foreign_total.toFixed(2)}</td>
-                <td className="px-3 py-2 text-right font-semibold text-slate-900">
-                  {row.total_amount.toFixed(2)}
-                </td>
-              </tr>
+              <>
+                <tr key={row.cashier_id} className="hover:bg-slate-50">
+                  <td className="px-3 py-2 text-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => toggleExpanded(row.cashier_id)}
+                      className="inline-flex items-center gap-1 text-slate-800 hover:text-slate-900"
+                    >
+                      {expandedCashiers.has(row.cashier_id) ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                      {row.cashier_name}
+                    </button>
+                  </td>
+                  <td className="px-3 py-2 text-right text-slate-800">{row.local_count}</td>
+                  <td className="px-3 py-2 text-right text-slate-800">{row.foreign_count}</td>
+                  <td className="px-3 py-2 text-right text-slate-800">{row.total_transactions}</td>
+                  <td className="px-3 py-2 text-right text-slate-800">{row.cash_total.toFixed(2)}</td>
+                  <td className="px-3 py-2 text-right text-slate-800">{row.card_total.toFixed(2)}</td>
+                  <td className="px-3 py-2 text-right text-slate-800">{row.local_total.toFixed(2)}</td>
+                  <td className="px-3 py-2 text-right text-slate-800">{row.foreign_total.toFixed(2)}</td>
+                  <td className="px-3 py-2 text-right font-semibold text-slate-900">
+                    {row.total_amount.toFixed(2)}
+                  </td>
+                </tr>
+                {expandedCashiers.has(row.cashier_id) &&
+                  row.activities &&
+                  row.activities.length > 0 &&
+                  row.activities.map((activity) => (
+                    <tr
+                      key={`${row.cashier_id}-${activity.activity_id}`}
+                      className="bg-slate-50 text-xs"
+                    >
+                      <td className="px-6 py-2 pl-12 text-slate-700">{activity.activity_name}</td>
+                      <td className="px-3 py-2 text-right text-slate-700">{activity.local_count}</td>
+                      <td className="px-3 py-2 text-right text-slate-700">{activity.foreign_count}</td>
+                      <td className="px-3 py-2 text-right text-slate-700">
+                        {activity.local_count + activity.foreign_count}
+                      </td>
+                      <td className="px-3 py-2 text-right text-slate-700">
+                        {activity.cash_total.toFixed(2)}
+                      </td>
+                      <td className="px-3 py-2 text-right text-slate-700">
+                        {activity.card_total.toFixed(2)}
+                      </td>
+                      <td className="px-3 py-2 text-right text-slate-700">
+                        {activity.local_total.toFixed(2)}
+                      </td>
+                      <td className="px-3 py-2 text-right text-slate-700">
+                        {activity.foreign_total.toFixed(2)}
+                      </td>
+                      <td className="px-3 py-2 text-right font-semibold text-slate-700">
+                        {activity.total_amount.toFixed(2)}
+                      </td>
+                    </tr>
+                  ))}
+              </>
             ))}
 
             {!isLoading && cashier.length === 0 ? (

@@ -93,6 +93,12 @@ function mapCashierRows(rows: CashierReportRow[]): ExportRow[] {
     cash_total: row.cash_total,
     card_total: row.card_total,
     total_amount: row.total_amount,
+    activities: row.activities
+      .map(
+        (activity) =>
+          `${activity.activity_name} (L ${activity.local_count}/${activity.local_total.toFixed(2)}, F ${activity.foreign_count}/${activity.foreign_total.toFixed(2)}, Cash ${activity.cash_total.toFixed(2)}, Card ${activity.card_total.toFixed(2)})`
+      )
+      .join('; '),
   }));
 }
 

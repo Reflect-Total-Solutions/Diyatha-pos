@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { formatColomboDate } from '@/lib/dateUtils';
 import { useNotificationsStore } from '@/stores/notifications';
 import type { PriceType } from '@/types/transaction';
 
@@ -182,16 +183,14 @@ export default function TicketPreview({ open, tickets, onClose }: TicketPreviewP
                   <span className="w-16">Date</span>
                   <span className="mr-2">:</span>
                   <span className="truncate">
-                    {new Date(ticket.created_at).toLocaleDateString('en-GB').replace(/\//g, '-')}
+                    {formatColomboDate(new Date(ticket.created_at))}
                   </span>
                 </div>
                 <div className="flex w-full whitespace-nowrap">
                   <span className="w-16">Time</span>
                   <span className="mr-2">:</span>
                   <span className="truncate">
-                    {new Date(ticket.created_at).toLocaleTimeString('en-US', {
-                      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true,
-                    })}
+                    {formatColomboDate(new Date(ticket.created_at), 'hh:mm:ss a')}
                   </span>
                 </div>
                 <div className="flex w-full whitespace-nowrap">

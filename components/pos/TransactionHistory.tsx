@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { TIMEZONE_COLOMBO } from '@/lib/constants';
 import type { Activity } from '@/types/activity';
 import type { Transaction } from '@/types/transaction';
 
@@ -38,6 +39,7 @@ function formatTime(timestamp: string): string {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
+    timeZone: TIMEZONE_COLOMBO,
   }).format(new Date(timestamp));
 }
 

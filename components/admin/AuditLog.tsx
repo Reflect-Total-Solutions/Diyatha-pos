@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 
+import { formatColomboDateTime } from '@/lib/dateUtils';
+
 export type AuditLogRow = {
   id: string;
   action: string;
@@ -66,7 +68,7 @@ export default function AuditLog({
             {rows.map((row) => (
               <tr key={row.id}>
                 <td className="px-3 py-2 text-slate-800">
-                  {new Date(row.created_at).toLocaleString()}
+                  {formatColomboDateTime(new Date(row.created_at))}
                 </td>
                 <td className="px-3 py-2 text-slate-800">{row.user_name}</td>
                 <td className="px-3 py-2 text-slate-800">{row.action}</td>

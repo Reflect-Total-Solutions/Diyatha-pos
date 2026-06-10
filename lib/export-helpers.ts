@@ -1,6 +1,8 @@
 import * as XLSX from 'xlsx';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 
+import { formatColomboDate, formatColomboDateTime } from './dateUtils';
+
 export type ExportRowValue = string | number | boolean | null | undefined;
 export type ExportRow = Record<string, ExportRowValue>;
 
@@ -18,7 +20,7 @@ function normalizeRows(rows: ExportRow[]): Record<string, string | number | bool
 
 export function buildReportFilename(prefix: string, extension: 'xlsx' | 'pdf'): string {
   const safePrefix = prefix.replace(/[^a-zA-Z0-9-_]/g, '-').toLowerCase();
-  const timestamp = new Date().toISOString().replace(/[.:]/g, '-');
+  const timestamp = formatColomboDate(new Date(), 'yyyy-MM-dd-HH-mm-ss');
   return `${safePrefix}-${timestamp}.${extension}`;
 }
 
@@ -68,7 +70,7 @@ export async function createPdfBuffer(title: string, rows: ExportRow[]): Promise
   });
   cursorY -= 24;
 
-  page.drawText(`Generated at: ${new Date().toISOString()}`, {
+  page.drawText(`Generated at: ${formatColomboDateTime(new Date())} (Sri Lanka)`, {
     x: margin,
     y: cursorY,
     size: 9,

@@ -8,7 +8,7 @@ import {
   toZonedTime,
   fromZonedTime,
 } from 'date-fns-tz';
-import { parse } from 'date-fns';
+import { format, parse } from 'date-fns';
 import { TIMEZONE_COLOMBO, DATE_FORMAT, TIME_FORMAT, DATETIME_FORMAT } from './constants';
 
 /**
@@ -85,6 +85,37 @@ export function parseColomboDate(
 ): Date {
   const parsed = parse(dateStr, fmt, new Date());
   return fromZonedTime(parsed, TIMEZONE_COLOMBO);
+}
+
+/**
+ * Compute the UTC instants for a shift window expressed in Colombo time.
+ * When endTime <= startTime the window crosses midnight, so the end date is
+ * toDate + 1 day (e.g. 16:00 -> 02:00 means "until 02:00 the next morning";
+ * equal times mean a full 24h window).
+ */
+export function computeShiftWindowUtc(
+  fromDate: string,
+  toDate: string,
+  startTime: string,
+  endTime: string
+): { startUtc: Date; endUtc: Date; endDateLocal: string } {
+  const startUtc = parseColomboDate(`${fromDate} ${startTime}`, 'yyyy-MM-dd HH:mm');
+
+  let endDateLocal = toDate;
+
+  if (endTime <= startTime) {
+    const parsedToDate = parse(toDate, 'yyyy-MM-dd', new Date());
+    parsedToDate.setDate(parsedToDate.getDate() + 1);
+    endDateLocal = format(parsedToDate, 'yyyy-MM-dd');
+  }
+
+  const endUtc = parseColomboDate(`${endDateLocal} ${endTime}`, 'yyyy-MM-dd HH:mm');
+
+  if (!(endUtc > startUtc)) {
+    throw new Error('Invalid shift window: end must be after start');
+  }
+
+  return { startUtc, endUtc, endDateLocal };
 }
 
 /**

@@ -7,6 +7,7 @@ const reportLinks = [
   { href: '/admin/reports/activity', label: 'Activity' },
   { href: '/admin/reports/cashier', label: 'Cashier' },
   { href: '/admin/reports/transactions', label: 'Transactions' },
+  { href: '/admin/reports/shift', label: 'Shift' },
 ];
 
 export default function ReportsLayout({ children }: { children: ReactNode }) {

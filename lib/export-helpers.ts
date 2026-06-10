@@ -30,11 +30,18 @@ function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
   return copy.buffer;
 }
 
-export function createExcelBuffer(rows: ExportRow[], sheetName: string): ArrayBuffer {
-  const workbook = XLSX.utils.book_new();
-  const worksheet = XLSX.utils.json_to_sheet(normalizeRows(rows));
+export type ExportSheet = {
+  name: string;
+  rows: ExportRow[];
+};
 
-  XLSX.utils.book_append_sheet(workbook, worksheet, sheetName.slice(0, 31));
+export function createExcelBufferSheets(sheets: ExportSheet[]): ArrayBuffer {
+  const workbook = XLSX.utils.book_new();
+
+  for (const sheet of sheets) {
+    const worksheet = XLSX.utils.json_to_sheet(normalizeRows(sheet.rows));
+    XLSX.utils.book_append_sheet(workbook, worksheet, sheet.name.slice(0, 31));
+  }
 
   const arrayBuffer = XLSX.write(workbook, {
     type: 'array',
@@ -43,6 +50,10 @@ export function createExcelBuffer(rows: ExportRow[], sheetName: string): ArrayBu
   });
 
   return toArrayBuffer(new Uint8Array(arrayBuffer as ArrayBufferLike));
+}
+
+export function createExcelBuffer(rows: ExportRow[], sheetName: string): ArrayBuffer {
+  return createExcelBufferSheets([{ name: sheetName, rows }]);
 }
 
 export async function createPdfBuffer(title: string, rows: ExportRow[]): Promise<ArrayBuffer> {

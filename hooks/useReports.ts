@@ -6,6 +6,8 @@ import type {
   ActivityReportRow,
   CashierReportRow,
   DailyReportRow,
+  ShiftReportRow,
+  ShiftReportWindow,
   TransactionReportRow,
 } from '@/types/report';
 
@@ -13,6 +15,8 @@ export type ReportFilters = {
   date?: string;
   from?: string;
   to?: string;
+  startTime?: string;
+  endTime?: string;
   cashierId?: string;
   activityId?: string;
   priceType?: 'local' | 'foreign';
@@ -48,6 +52,14 @@ function buildQueryString(filters: ReportFilters): string {
 
   if (filters.to) {
     params.set('to', filters.to);
+  }
+
+  if (filters.startTime) {
+    params.set('start_time', filters.startTime);
+  }
+
+  if (filters.endTime) {
+    params.set('end_time', filters.endTime);
   }
 
   if (filters.cashierId) {
@@ -92,6 +104,9 @@ export function useReports() {
   const [activity, setActivity] = useState<ActivityReportRow[]>([]);
   const [cashier, setCashier] = useState<CashierReportRow[]>([]);
   const [transactions, setTransactions] = useState<TransactionReportRow[]>([]);
+  const [shift, setShift] = useState<ShiftReportRow[]>([]);
+  const [shiftTotalAmount, setShiftTotalAmount] = useState(0);
+  const [shiftWindow, setShiftWindow] = useState<ShiftReportWindow | null>(null);
 
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -239,8 +254,49 @@ export function useReports() {
     }
   }, []);
 
+  const loadShiftReport = useCallback(async (filters: ReportFilters = {}): Promise<MutationResult> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/reports/shift${buildQueryString(filters)}`, {
+        method: 'GET',
+        cache: 'no-store',
+      });
+
+      const payload = (await response.json()) as ListResponse<ShiftReportRow> & {
+        total_amount?: number;
+        window?: ShiftReportWindow;
+      };
+
+      if (!response.ok) {
+        setShift([]);
+        setShiftTotalAmount(0);
+        setShiftWindow(null);
+        setTotal(0);
+        setError(payload.error ?? 'Unable to load shift report');
+        return { success: false, error: payload.error ?? 'Unable to load shift report' };
+      }
+
+      setShift(payload.data ?? []);
+      setShiftTotalAmount(payload.total_amount ?? 0);
+      setShiftWindow(payload.window ?? null);
+      setTotal(payload.total ?? (payload.data ?? []).length);
+      return { success: true };
+    } catch {
+      setShift([]);
+      setShiftTotalAmount(0);
+      setShiftWindow(null);
+      setTotal(0);
+      setError('Unable to load shift report');
+      return { success: false, error: 'Unable to load shift report' };
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   const exportReport = useCallback(async (
-    reportType: 'daily' | 'activity' | 'cashier' | 'transactions',
+    reportType: 'daily' | 'activity' | 'cashier' | 'transactions' | 'shift',
     format: 'xlsx' | 'pdf',
     filters: ReportFilters = {}
   ): Promise<MutationResult> => {
@@ -296,6 +352,9 @@ export function useReports() {
     activity,
     cashier,
     transactions,
+    shift,
+    shiftTotalAmount,
+    shiftWindow,
     total,
     page,
     limit,
@@ -307,6 +366,7 @@ export function useReports() {
     loadActivityReport,
     loadCashierReport,
     loadTransactionsReport,
+    loadShiftReport,
     exportReport,
   };
 }

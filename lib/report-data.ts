@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import { computeShiftWindowUtc, formatColomboDateTime } from '@/lib/dateUtils';
 import { ForbiddenError, ValidationError } from '@/lib/errors';
 import type { RequestUserContext } from '@/lib/request-user';
 import type { Database } from '@/types/database';
@@ -9,6 +10,8 @@ import type {
   CashierReportRow,
   DailyActivityBreakdown,
   DailyReportRow,
+  ShiftReportRow,
+  ShiftReportWindow,
   TransactionReportRow,
 } from '@/types/report';
 
@@ -16,6 +19,8 @@ export type ReportQueryParams = {
   date?: string;
   from?: string;
   to?: string;
+  start_time?: string;
+  end_time?: string;
   cashier_id?: string;
   activity_id?: string;
   price_type?: 'local' | 'foreign';
@@ -30,6 +35,7 @@ type DailySummaryViewRow = Database['public']['Views']['daily_summary']['Row'];
 type TransactionRow = Database['public']['Tables']['transactions']['Row'];
 
 const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const TIME_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 function clampPagination(page = 1, limit = 50) {
   const safePage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
@@ -50,6 +56,18 @@ function parseDateParam(rawValue: string | null, key: string): string | undefine
 
   if (!ISO_DATE_REGEX.test(rawValue)) {
     throw new ValidationError(`Invalid ${key}. Expected YYYY-MM-DD format.`);
+  }
+
+  return rawValue;
+}
+
+function parseTimeParam(rawValue: string | null, key: string): string | undefined {
+  if (!rawValue) {
+    return undefined;
+  }
+
+  if (!TIME_REGEX.test(rawValue)) {
+    throw new ValidationError(`Invalid ${key}. Expected HH:mm format (24-hour).`);
   }
 
   return rawValue;
@@ -113,6 +131,8 @@ export function parseReportQueryParams(url: string): ReportQueryParams {
     date,
     from,
     to,
+    start_time: parseTimeParam(searchParams.get('start_time'), 'start_time'),
+    end_time: parseTimeParam(searchParams.get('end_time'), 'end_time'),
     cashier_id: searchParams.get('cashier_id') ?? undefined,
     activity_id: searchParams.get('activity_id') ?? undefined,
     price_type: parsedPriceType,
@@ -583,5 +603,131 @@ export async function fetchTransactionsReportData(
     limit,
     total,
     totalPages: Math.ceil(total / limit),
+  };
+}
+
+const SHIFT_DEFAULT_START_TIME = '16:00';
+const SHIFT_DEFAULT_END_TIME = '02:00';
+const SHIFT_ROW_CAP = 10000;
+
+export async function fetchShiftReportData(
+  supabase: ReportSupabaseClient,
+  requestUser: RequestUserContext,
+  params: ReportQueryParams
+): Promise<{
+  data: ShiftReportRow[];
+  total: number;
+  total_amount: number;
+  window: ShiftReportWindow;
+}> {
+  if (requestUser.role !== 'admin') {
+    throw new ForbiddenError('Forbidden');
+  }
+
+  if (!params.from || !params.to) {
+    throw new ValidationError('Shift report requires from and to dates.');
+  }
+
+  const startTime = params.start_time ?? SHIFT_DEFAULT_START_TIME;
+  const endTime = params.end_time ?? SHIFT_DEFAULT_END_TIME;
+  const { startUtc, endUtc } = computeShiftWindowUtc(params.from, params.to, startTime, endTime);
+
+  let query = supabase
+    .from('transactions')
+    .select('id, txn_reference, cashier_id, activity_id, price_type, amount, created_at, cancelled_at', {
+      count: 'exact',
+    })
+    .gte('created_at', startUtc.toISOString())
+    .lt('created_at', endUtc.toISOString())
+    .order('txn_reference', { ascending: true })
+    .limit(SHIFT_ROW_CAP);
+
+  if (params.cashier_id) {
+    query = query.eq('cashier_id', params.cashier_id);
+  }
+
+  if (params.activity_id) {
+    query = query.eq('activity_id', params.activity_id);
+  }
+
+  const { data, error, count } = await query;
+
+  if (error) {
+    throw error;
+  }
+
+  const rows = (data ?? []) as Array<
+    Pick<
+      TransactionRow,
+      'id' | 'txn_reference' | 'cashier_id' | 'activity_id' | 'price_type' | 'amount' | 'created_at' | 'cancelled_at'
+    >
+  >;
+
+  const activityIds = Array.from(new Set(rows.map((row) => row.activity_id)));
+  const cashierIds = Array.from(new Set(rows.map((row) => row.cashier_id)));
+
+  const activityNameMap = new Map<string, string>();
+  const cashierNameMap = new Map<string, string>();
+
+  if (activityIds.length > 0) {
+    const { data: activities, error: activitiesError } = await supabase
+      .from('activities')
+      .select('id, name')
+      .in('id', activityIds);
+
+    if (activitiesError) {
+      throw activitiesError;
+    }
+
+    for (const activity of (activities ?? []) as Array<{ id: string; name: string }>) {
+      activityNameMap.set(activity.id, activity.name);
+    }
+  }
+
+  if (cashierIds.length > 0) {
+    const { data: users, error: usersError } = await supabase
+      .from('users')
+      .select('id, display_name')
+      .in('id', cashierIds);
+
+    if (usersError) {
+      throw usersError;
+    }
+
+    for (const user of (users ?? []) as Array<{ id: string; display_name: string }>) {
+      cashierNameMap.set(user.id, user.display_name);
+    }
+  }
+
+  const output: ShiftReportRow[] = rows.map((row) => ({
+    id: row.id,
+    txn_reference: row.txn_reference,
+    cashier_id: row.cashier_id,
+    cashier_name: cashierNameMap.get(row.cashier_id) ?? row.cashier_id,
+    activity_id: row.activity_id,
+    activity_name: activityNameMap.get(row.activity_id) ?? row.activity_id,
+    price_type: row.price_type,
+    amount: Number(row.amount),
+    created_at: row.created_at,
+    cancelled_at: row.cancelled_at,
+  }));
+
+  const totalAmount = Number(
+    output
+      .filter((row) => !row.cancelled_at)
+      .reduce((sum, row) => sum + row.amount, 0)
+      .toFixed(2)
+  );
+
+  return {
+    data: output,
+    total: count ?? output.length,
+    total_amount: totalAmount,
+    window: {
+      start_utc: startUtc.toISOString(),
+      end_utc: endUtc.toISOString(),
+      start_local: formatColomboDateTime(startUtc),
+      end_local: formatColomboDateTime(endUtc),
+    },
   };
 }

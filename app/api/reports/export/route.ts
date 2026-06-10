@@ -1,15 +1,18 @@
 import { ERROR_CODES, HTTP_STATUS, RATE_LIMITS } from '@/lib/constants';
 import {
   buildReportFilename,
-  createExcelBuffer,
+  createExcelBufferSheets,
   createPdfBuffer,
   type ExportRow,
+  type ExportSheet,
 } from '@/lib/export-helpers';
 import { toApiError, ValidationError } from '@/lib/errors';
+import { formatColomboDateTime } from '@/lib/dateUtils';
 import {
   fetchActivityReportData,
   fetchCashierReportData,
   fetchDailyReportData,
+  fetchShiftReportData,
   fetchTransactionsReportData,
   parseReportQueryParams,
 } from '@/lib/report-data';
@@ -20,13 +23,14 @@ import type {
   ActivityReportRow,
   CashierReportRow,
   DailyReportRow,
+  ShiftReportRow,
   TransactionReportRow,
 } from '@/types/report';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-type ReportKind = 'daily' | 'activity' | 'cashier' | 'transactions';
+type ReportKind = 'daily' | 'activity' | 'cashier' | 'transactions' | 'shift';
 type ExportFormat = 'xlsx' | 'pdf';
 
 function parseExportParams(url: string): {
@@ -37,8 +41,8 @@ function parseExportParams(url: string): {
   const reportType = searchParams.get('report_type');
   const format = searchParams.get('format');
 
-  if (!reportType || !['daily', 'activity', 'cashier', 'transactions'].includes(reportType)) {
-    throw new ValidationError('Invalid report_type. Expected daily, activity, cashier, or transactions.');
+  if (!reportType || !['daily', 'activity', 'cashier', 'transactions', 'shift'].includes(reportType)) {
+    throw new ValidationError('Invalid report_type. Expected daily, activity, cashier, transactions, or shift.');
   }
 
   if (!format || !['xlsx', 'pdf'].includes(format)) {
@@ -118,6 +122,75 @@ function mapTransactionRows(rows: TransactionReportRow[]): ExportRow[] {
   }));
 }
 
+function mapShiftRows(rows: ShiftReportRow[]): ExportRow[] {
+  return rows.map((row) => ({
+    created_at: formatColomboDateTime(new Date(row.created_at)),
+    txn_reference: row.txn_reference,
+    cashier_name: row.cashier_name,
+    activity_name: row.activity_name,
+    price_type: row.price_type,
+    amount: row.amount,
+    cancelled: Boolean(row.cancelled_at),
+  }));
+}
+
+function mapShiftCashierTotals(rows: ShiftReportRow[], grandTotal: number): ExportRow[] {
+  const byCashier = new Map<
+    string,
+    {
+      cashier_name: string;
+      ticket_count: number;
+      cancelled_count: number;
+      local_total: number;
+      foreign_total: number;
+      total_amount: number;
+    }
+  >();
+
+  for (const row of rows) {
+    const entry =
+      byCashier.get(row.cashier_id) ??
+      {
+        cashier_name: row.cashier_name,
+        ticket_count: 0,
+        cancelled_count: 0,
+        local_total: 0,
+        foreign_total: 0,
+        total_amount: 0,
+      };
+
+    if (row.cancelled_at) {
+      entry.cancelled_count += 1;
+    } else {
+      entry.ticket_count += 1;
+      entry.total_amount = Number((entry.total_amount + row.amount).toFixed(2));
+
+      if (row.price_type === 'local') {
+        entry.local_total = Number((entry.local_total + row.amount).toFixed(2));
+      } else {
+        entry.foreign_total = Number((entry.foreign_total + row.amount).toFixed(2));
+      }
+    }
+
+    byCashier.set(row.cashier_id, entry);
+  }
+
+  const output: ExportRow[] = Array.from(byCashier.values())
+    .sort((a, b) => b.total_amount - a.total_amount)
+    .map((entry) => ({ ...entry }));
+
+  output.push({
+    cashier_name: 'GRAND TOTAL (excl. cancelled)',
+    ticket_count: rows.filter((row) => !row.cancelled_at).length,
+    cancelled_count: rows.filter((row) => Boolean(row.cancelled_at)).length,
+    local_total: null,
+    foreign_total: null,
+    total_amount: grandTotal,
+  });
+
+  return output;
+}
+
 function getReportTitle(kind: ReportKind): string {
   switch (kind) {
     case 'daily':
@@ -128,6 +201,8 @@ function getReportTitle(kind: ReportKind): string {
       return 'Cashier Report';
     case 'transactions':
       return 'Transactions Report';
+    case 'shift':
+      return 'Shift Report';
     default:
       return 'Report';
   }
@@ -157,6 +232,7 @@ export async function GET(request: Request) {
     const { reportKind, format } = parseExportParams(request.url);
 
     let rows: ExportRow[] = [];
+    let extraSheets: ExportSheet[] = [];
 
     if (reportKind === 'daily') {
       rows = mapDailyRows(await fetchDailyReportData(supabaseServer, user, filters));
@@ -179,11 +255,28 @@ export async function GET(request: Request) {
       rows = mapTransactionRows(transactions.data);
     }
 
+    if (reportKind === 'shift') {
+      const shift = await fetchShiftReportData(supabaseServer, user, filters);
+      rows = mapShiftRows(shift.data);
+      rows.push({
+        created_at: `${shift.window.start_local} -> ${shift.window.end_local}`,
+        txn_reference: 'GRAND TOTAL (excl. cancelled)',
+        cashier_name: null,
+        activity_name: null,
+        price_type: null,
+        amount: shift.total_amount,
+        cancelled: null,
+      });
+      extraSheets = [
+        { name: 'Cashier Totals', rows: mapShiftCashierTotals(shift.data, shift.total_amount) },
+      ];
+    }
+
     const title = getReportTitle(reportKind);
     const filename = buildReportFilename(`${reportKind}-report`, format);
 
     if (format === 'xlsx') {
-      const buffer = createExcelBuffer(rows, title);
+      const buffer = createExcelBufferSheets([{ name: title, rows }, ...extraSheets]);
 
       return new Response(buffer, {
         status: HTTP_STATUS.OK,

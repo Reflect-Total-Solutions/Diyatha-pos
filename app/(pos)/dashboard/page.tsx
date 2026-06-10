@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import ActivityGrid from '@/components/pos/ActivityGrid';
 import DailySummary from '@/components/pos/DailySummary';
@@ -59,7 +59,6 @@ export default function DashboardPage() {
     createBulkTransactions,
     cancelTransaction,
     searchTransactions,
-    endCurrentGroup,
   } = useTransactions({
     limit: 10000,
     startDate: startOfTodayISO,
@@ -81,6 +80,10 @@ export default function DashboardPage() {
   const [previewTickets, setPreviewTickets] = useState<PrintedTicket[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [cancellingTransactionId, setCancellingTransactionId] = useState<string | null>(null);
+
+  // One key per checkout attempt set: reused on retry of the same cart so the
+  // server can deduplicate, regenerated whenever the cart changes.
+  const idempotencyKeyRef = useRef<string | null>(null);
 
   // Exchange state
   const [exchangeTxnId, setExchangeTxnId] = useState<string | null>(null);
@@ -161,6 +164,7 @@ export default function DashboardPage() {
   }, [cartItems]);
 
   function addActivityToCart(activity: Activity) {
+    idempotencyKeyRef.current = null;
     setCartItems((current) => {
       const existingIndex = current.findIndex(
         (item) => item.activity.id === activity.id && item.priceType === priceType
@@ -182,6 +186,7 @@ export default function DashboardPage() {
   }
 
   function updateCartQuantity(activityId: string, pType: 'local' | 'foreign', quantity: number) {
+    idempotencyKeyRef.current = null;
     setCartItems((current) =>
       current.map((item) =>
         item.activity.id === activityId && item.priceType === pType
@@ -195,10 +200,12 @@ export default function DashboardPage() {
   }
 
   function removeFromCart(activityId: string, pType: 'local' | 'foreign') {
+    idempotencyKeyRef.current = null;
     setCartItems((current) => current.filter((item) => !(item.activity.id === activityId && item.priceType === pType)));
   }
 
   function clearCart() {
+    idempotencyKeyRef.current = null;
     setCartItems([]);
   }
 
@@ -218,13 +225,17 @@ export default function DashboardPage() {
         price_type: item.priceType,
       }));
 
-      const sharedGroupId = summary.currentGroupId ?? undefined;
+      // Reuse the key when retrying the same unchanged cart so the server can
+      // recognize the retry and never double-insert.
+      if (!idempotencyKeyRef.current) {
+        idempotencyKeyRef.current = crypto.randomUUID();
+      }
 
       // Single atomic API call to create all transactions
       const bulkResult = await createBulkTransactions(
         bulkItems,
         paymentMethod,
-        sharedGroupId
+        idempotencyKeyRef.current
       );
 
       if (!bulkResult.success || !bulkResult.data) {
@@ -250,9 +261,6 @@ export default function DashboardPage() {
 
       // Refresh transaction list right away
       void refetchTransactions();
-
-      // Trigger end customer group automatically after successful payment
-      void handleEndCustomer();
 
       // === Show generated tickets preview in the browser (temp) ===
       const ticketsToPreview: PrintedTicket[] = createdTransactions.map((t) => {
@@ -376,25 +384,6 @@ export default function DashboardPage() {
     } finally {
       setIsExchanging(false);
     }
-  }
-
-  async function handleEndCustomer() {
-    const result = await endCurrentGroup();
-
-    if (!result.success) {
-      pushNotification({
-        type: 'error',
-        title: 'Unable to end customer session',
-        message: result.error,
-      });
-      return;
-    }
-
-    pushNotification({
-      type: 'success',
-      title: 'Customer session completed',
-      message: 'Transaction group was finalized successfully.',
-    });
   }
 
   return (
@@ -593,15 +582,6 @@ export default function DashboardPage() {
               {isConfirmingPayment ? 'Processing...' : 'Checkout'}
             </Button>
 
-            {/* <Button
-              type="button"
-              variant="outline"
-              disabled={!summary.currentGroupId || isTransactionsMutating}
-              onClick={handleEndCustomer}
-              className="mt-2 w-full h-11 rounded-xl border-2 border-slate-400 font-semibold text-slate-700 hover:bg-slate-100"
-            >
-              End Customer
-            </Button> */}
           </div>
 
           <DailySummary

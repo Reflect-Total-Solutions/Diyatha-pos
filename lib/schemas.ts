@@ -82,7 +82,7 @@ export const TransactionSchema = z.object({
 export type TransactionInput = z.infer<typeof TransactionSchema>;
 
 export const BulkTransactionSchema = z.object({
-  transaction_group_id: z.string().uuid('Invalid group ID').optional(),
+  idempotency_key: z.string().uuid('Invalid idempotency key'),
   payment_method: z.enum(['cash', 'card']).optional().default('cash'),
   items: z
     .array(

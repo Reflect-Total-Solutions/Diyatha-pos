@@ -68,6 +68,7 @@ export type BulkTransactionResult = {
   transactions: TransactionWithToken[];
   transaction_count: number;
   total_amount: number;
+  replayed: boolean;
 };
 
 export type TransactionSearchInput = {
@@ -321,21 +322,18 @@ export function useTransactions(options: UseTransactionsOptions = {}) {
   const createBulkTransactions = useCallback(async (
     items: BulkTransactionItem[],
     paymentMethod: 'cash' | 'card',
-    groupId?: string
+    idempotencyKey: string
   ): Promise<MutationResult<BulkTransactionResult>> => {
     setIsMutating(true);
 
     try {
-      const latestGroupId = useTransactionGroupStore.getState().currentGroupId;
-      const targetGroupId = groupId ?? latestGroupId ?? currentGroupId ?? undefined;
-
       const response = await fetch('/api/transactions/bulk', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          transaction_group_id: targetGroupId,
+          idempotency_key: idempotencyKey,
           payment_method: paymentMethod,
           items,
         }),
@@ -350,17 +348,9 @@ export function useTransactions(options: UseTransactionsOptions = {}) {
         };
       }
 
-      // Update the group store with the real server values
-      setFromServer({
-        id: payload.data.transaction_group_id,
-        transaction_count: payload.data.transaction_count,
-        total_amount: payload.data.total_amount,
-      });
-
-      // If no group existed before, also trigger startNewGroup for UI
-      if (!targetGroupId) {
-        startNewGroup(payload.data.transaction_group_id);
-      }
+      // The server creates and completes the group atomically per checkout, so
+      // no group ever stays open on the client between customers.
+      endGroup();
 
       return {
         success: true,
@@ -374,7 +364,7 @@ export function useTransactions(options: UseTransactionsOptions = {}) {
     } finally {
       setIsMutating(false);
     }
-  }, [currentGroupId, setFromServer, startNewGroup]);
+  }, [endGroup]);
 
   const cancelTransaction = useCallback(async (
     transactionId: string,

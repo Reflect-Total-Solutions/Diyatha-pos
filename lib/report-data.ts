@@ -609,6 +609,7 @@ export async function fetchTransactionsReportData(
 const SHIFT_DEFAULT_START_TIME = '16:00';
 const SHIFT_DEFAULT_END_TIME = '02:00';
 const SHIFT_ROW_CAP = 10000;
+const SHIFT_PAGE_SIZE = 1000;
 
 export async function fetchShiftReportData(
   supabase: ReportSupabaseClient,
@@ -632,36 +633,52 @@ export async function fetchShiftReportData(
   const endTime = params.end_time ?? SHIFT_DEFAULT_END_TIME;
   const { startUtc, endUtc } = computeShiftWindowUtc(params.from, params.to, startTime, endTime);
 
-  let query = supabase
-    .from('transactions')
-    .select('id, txn_reference, cashier_id, activity_id, price_type, amount, created_at, cancelled_at', {
-      count: 'exact',
-    })
-    .gte('created_at', startUtc.toISOString())
-    .lt('created_at', endUtc.toISOString())
-    .order('txn_reference', { ascending: true })
-    .limit(SHIFT_ROW_CAP);
-
-  if (params.cashier_id) {
-    query = query.eq('cashier_id', params.cashier_id);
-  }
-
-  if (params.activity_id) {
-    query = query.eq('activity_id', params.activity_id);
-  }
-
-  const { data, error, count } = await query;
-
-  if (error) {
-    throw error;
-  }
-
-  const rows = (data ?? []) as Array<
-    Pick<
-      TransactionRow,
-      'id' | 'txn_reference' | 'cashier_id' | 'activity_id' | 'price_type' | 'amount' | 'created_at' | 'cancelled_at'
-    >
+  type ShiftSourceRow = Pick<
+    TransactionRow,
+    'id' | 'txn_reference' | 'cashier_id' | 'activity_id' | 'price_type' | 'amount' | 'created_at' | 'cancelled_at'
   >;
+
+  // PostgREST caps each response at its server-side `max-rows` setting (1000
+  // by default), so `.limit()` alone silently truncates large windows. Page
+  // through with `.range()` until every row in the window is fetched, so the
+  // grand total and exports always cover everything.
+  const rows: ShiftSourceRow[] = [];
+  let total = 0;
+
+  for (let offset = 0; offset < SHIFT_ROW_CAP; offset += SHIFT_PAGE_SIZE) {
+    let query = supabase
+      .from('transactions')
+      .select('id, txn_reference, cashier_id, activity_id, price_type, amount, created_at, cancelled_at', {
+        count: 'exact',
+      })
+      .gte('created_at', startUtc.toISOString())
+      .lt('created_at', endUtc.toISOString())
+      .order('txn_reference', { ascending: true })
+      .range(offset, offset + SHIFT_PAGE_SIZE - 1);
+
+    if (params.cashier_id) {
+      query = query.eq('cashier_id', params.cashier_id);
+    }
+
+    if (params.activity_id) {
+      query = query.eq('activity_id', params.activity_id);
+    }
+
+    const { data, error, count } = await query;
+
+    if (error) {
+      throw error;
+    }
+
+    total = count ?? total;
+
+    const pageRows = (data ?? []) as ShiftSourceRow[];
+    rows.push(...pageRows);
+
+    if (pageRows.length < SHIFT_PAGE_SIZE || rows.length >= total) {
+      break;
+    }
+  }
 
   const activityIds = Array.from(new Set(rows.map((row) => row.activity_id)));
   const cashierIds = Array.from(new Set(rows.map((row) => row.cashier_id)));
@@ -721,7 +738,7 @@ export async function fetchShiftReportData(
 
   return {
     data: output,
-    total: count ?? output.length,
+    total: total || output.length,
     total_amount: totalAmount,
     window: {
       start_utc: startUtc.toISOString(),

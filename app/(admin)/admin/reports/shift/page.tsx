@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { formatInTimeZone } from 'date-fns-tz';
 import { Button } from '@/components/ui/button';
@@ -34,19 +34,29 @@ export default function ShiftReportPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
 
-  const baseFilters = useMemo(
-    () => ({
-      from,
-      to,
-      startTime,
-      endTime,
-    }),
-    [endTime, from, startTime, to]
-  );
+  // The report is only (re)fetched when the user clicks "Generate" — changing
+  // the date/time inputs alone must not trigger an API request. `appliedFilters`
+  // holds the last generated window, and exports use it so they always match
+  // what's on screen.
+  const [appliedFilters, setAppliedFilters] = useState({
+    from,
+    to,
+    startTime,
+    endTime,
+  });
 
+  const generateReport = useCallback(() => {
+    const filters = { from, to, startTime, endTime };
+    setAppliedFilters(filters);
+    setPage(1);
+    void loadShiftReport(filters);
+  }, [endTime, from, loadShiftReport, startTime, to]);
+
+  // Initial load only — subsequent loads happen via the Generate button.
   useEffect(() => {
-    void loadShiftReport(baseFilters);
-  }, [baseFilters, loadShiftReport]);
+    void loadShiftReport(appliedFilters);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const totalPages = Math.max(1, Math.ceil(shift.length / pageSize));
   const safePage = Math.min(page, totalPages);
@@ -73,10 +83,7 @@ export default function ShiftReportPage() {
             <input
               type="date"
               value={from}
-              onChange={(event) => {
-                setPage(1);
-                setFrom(event.target.value);
-              }}
+              onChange={(event) => setFrom(event.target.value)}
               className="h-9 rounded-md border border-slate-300 px-3 text-sm text-slate-900"
             />
           </label>
@@ -86,10 +93,7 @@ export default function ShiftReportPage() {
             <input
               type="date"
               value={to}
-              onChange={(event) => {
-                setPage(1);
-                setTo(event.target.value);
-              }}
+              onChange={(event) => setTo(event.target.value)}
               className="h-9 rounded-md border border-slate-300 px-3 text-sm text-slate-900"
             />
           </label>
@@ -99,10 +103,7 @@ export default function ShiftReportPage() {
             <input
               type="time"
               value={startTime}
-              onChange={(event) => {
-                setPage(1);
-                setStartTime(event.target.value);
-              }}
+              onChange={(event) => setStartTime(event.target.value)}
               className="h-9 rounded-md border border-slate-300 px-3 text-sm text-slate-900"
             />
           </label>
@@ -112,10 +113,7 @@ export default function ShiftReportPage() {
             <input
               type="time"
               value={endTime}
-              onChange={(event) => {
-                setPage(1);
-                setEndTime(event.target.value);
-              }}
+              onChange={(event) => setEndTime(event.target.value)}
               className="h-9 rounded-md border border-slate-300 px-3 text-sm text-slate-900"
             />
           </label>
@@ -145,19 +143,14 @@ export default function ShiftReportPage() {
         ) : null}
 
         <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => void loadShiftReport(baseFilters)}
-            disabled={isLoading}
-          >
-            Refresh
+          <Button type="button" onClick={generateReport} disabled={isLoading}>
+            {isLoading ? 'Generating…' : 'Generate'}
           </Button>
 
           <Button
             type="button"
             variant="outline"
-            onClick={() => void exportReport('shift', 'xlsx', baseFilters)}
+            onClick={() => void exportReport('shift', 'xlsx', appliedFilters)}
             disabled={isExporting || isLoading}
           >
             Export XLSX
@@ -165,7 +158,8 @@ export default function ShiftReportPage() {
 
           <Button
             type="button"
-            onClick={() => void exportReport('shift', 'pdf', baseFilters)}
+            variant="outline"
+            onClick={() => void exportReport('shift', 'pdf', appliedFilters)}
             disabled={isExporting || isLoading}
           >
             Export PDF

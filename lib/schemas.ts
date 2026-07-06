@@ -176,6 +176,18 @@ export const TransactionSearchSchema = z.object({
 export type TransactionSearchInput = z.infer<typeof TransactionSearchSchema>;
 
 // ============================================================================
+// Refund Schemas
+// ============================================================================
+
+export const RefundTokenSchema = z.object({
+  token_number: z.string().trim().min(1, 'Token number is required').max(64, 'Token number is too long'),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in yyyy-MM-dd format'),
+  reason: z.string().trim().max(500, 'Reason must be 500 characters or less').optional(),
+});
+
+export type RefundTokenInput = z.infer<typeof RefundTokenSchema>;
+
+// ============================================================================
 // Pagination Schemas
 // ============================================================================
 

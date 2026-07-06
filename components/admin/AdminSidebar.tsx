@@ -14,6 +14,7 @@ import {
   Settings,
   Store,
   LogOut,
+  Undo2,
 } from 'lucide-react';
 
 const adminLinks = [
@@ -23,6 +24,7 @@ const adminLinks = [
   { href: '/admin/categories', label: 'Categories', icon: FolderTree },
   { href: '/admin/pricing', label: 'Pricing', icon: BadgeDollarSign },
   { href: '/admin/reports', label: 'Reports', icon: LineChart },
+  { href: '/admin/refund', label: 'Refund', icon: Undo2 },
   { href: '/admin/audit-log', label: 'Audit Log', icon: ClipboardList },
   { href: '/admin/maintenance', label: 'Maintenance', icon: Settings },
 ];

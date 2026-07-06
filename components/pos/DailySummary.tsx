@@ -42,20 +42,18 @@ export default function DailySummary({
     let cashAmount = 0;
     let cardAmount = 0;
 
+    const byId = new Map(transactions.map((t) => [t.id, t]));
+
+    // Count active rows, the same convention the reports use. Exchange
+    // replacements carry the value (it is conserved across an exchange), so a
+    // later refund or cancellation of a replacement is deducted exactly once.
     for (const transaction of transactions) {
-      // Skip the new replacement row from an exchange — the paid side is the
-      // original (cancelled + exchanged_to_transaction_id set), which we still
-      // count below. Including this row would double-count the same payment.
-      if (transaction.exchanged_from_transaction_id) {
-        continue;
-      }
-
-      const isExchanged = Boolean(
-        transaction.cancelled_at && transaction.exchanged_to_transaction_id
-      );
-
-      if (transaction.cancelled_at && !isExchanged) {
-        cancelledCount += 1;
+      if (transaction.cancelled_at) {
+        // Exchanged-away originals are represented by their replacement rows;
+        // anything else cancelled is a true cancellation.
+        if (!transaction.exchanged_to_transaction_id) {
+          cancelledCount += 1;
+        }
         continue;
       }
 
@@ -69,7 +67,14 @@ export default function DailySummary({
         foreignAmount += transaction.amount;
       }
 
-      if (transaction.payment_method === "card") {
+      // Exchange replacements don't carry the customer's payment method (they
+      // default to 'cash' at insert); attribute cash/card to the original
+      // ticket that was actually paid for, when it is in the loaded list.
+      const paymentSource = transaction.exchanged_from_transaction_id
+        ? byId.get(transaction.exchanged_from_transaction_id) ?? transaction
+        : transaction;
+
+      if (paymentSource.payment_method === "card") {
         cardAmount += transaction.amount;
       } else {
         cashAmount += transaction.amount;

@@ -5,6 +5,8 @@
 
 import { z } from 'zod';
 
+import { EXCHANGE_SPLIT_TEMPLATES, type ExchangeSplitOption } from '@/lib/constants';
+
 // ============================================================================
 // Auth Schemas
 // ============================================================================
@@ -97,6 +99,18 @@ export const BulkTransactionSchema = z.object({
 });
 
 export type BulkTransactionInput = z.infer<typeof BulkTransactionSchema>;
+
+export const ExchangeSplitSchema = z.object({
+  option: z
+    .enum(Object.keys(EXCHANGE_SPLIT_TEMPLATES) as [ExchangeSplitOption, ...ExchangeSplitOption[]])
+    .describe('Split option must be a known template'),
+  activity_ids: z
+    .array(z.string().uuid('Invalid activity ID'))
+    .min(2, 'At least two activities are required for a split')
+    .max(3, 'At most three activities are allowed for a split'),
+});
+
+export type ExchangeSplitInput = z.infer<typeof ExchangeSplitSchema>;
 
 // ============================================================================
 // Print Schemas

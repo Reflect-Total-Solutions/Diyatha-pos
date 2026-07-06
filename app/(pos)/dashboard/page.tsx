@@ -16,12 +16,25 @@ import { useTransactions } from '@/hooks/useTransactions';
 import { useNotificationsStore } from '@/stores/notifications';
 import { usePriceModeStore } from '@/stores/priceMode';
 import type { Activity } from '@/types/activity';
+import { EXCHANGE_SPLIT_TEMPLATES, type ExchangeSplitOption } from '@/lib/constants';
 import { getColomboStartOfDay, getColomboEndOfDay } from '@/lib/dateUtils';
 
 type CartItem = {
   activity: Activity;
   quantity: number;
   priceType: 'local' | 'foreign';
+};
+
+type ExchangedTransaction = {
+  id: string;
+  activity_id: string;
+  price_type: 'local' | 'foreign';
+  amount: number;
+  token_number?: string | null;
+  token_index?: number | null;
+  token_total?: number | null;
+  created_at: string;
+  txn_reference: string;
 };
 
 function formatCurrency(value: number): string {
@@ -88,6 +101,8 @@ export default function DashboardPage() {
   // Exchange state
   const [exchangeTxnId, setExchangeTxnId] = useState<string | null>(null);
   const [exchangeTargetActivityId, setExchangeTargetActivityId] = useState<string | null>(null);
+  const [exchangeMode, setExchangeMode] = useState<'swap' | ExchangeSplitOption>('swap');
+  const [splitActivityIds, setSplitActivityIds] = useState<(string | null)[]>([]);
   const [isExchanging, setIsExchanging] = useState(false);
 
   useEffect(() => {
@@ -320,15 +335,38 @@ export default function DashboardPage() {
   function handleOpenExchangeModal(transactionId: string) {
     setExchangeTxnId(transactionId);
     setExchangeTargetActivityId(null);
+    setExchangeMode('swap');
+    setSplitActivityIds([]);
   }
 
   function handleCloseExchangeModal() {
     setExchangeTxnId(null);
     setExchangeTargetActivityId(null);
+    setExchangeMode('swap');
+    setSplitActivityIds([]);
+  }
+
+  function handleSelectExchangeMode(mode: 'swap' | ExchangeSplitOption) {
+    setExchangeMode(mode);
+    if (mode === 'swap') {
+      setSplitActivityIds([]);
+    } else {
+      setExchangeTargetActivityId(null);
+      setSplitActivityIds(
+        Array<string | null>(EXCHANGE_SPLIT_TEMPLATES[mode].denominations.length).fill(null)
+      );
+    }
   }
 
   async function handleConfirmExchange() {
-    if (!exchangeTxnId || !exchangeTargetActivityId) return;
+    if (!exchangeTxnId) return;
+
+    const isSplit = exchangeMode !== 'swap';
+    if (isSplit) {
+      if (splitActivityIds.length === 0 || splitActivityIds.some((id) => !id)) return;
+    } else if (!exchangeTargetActivityId) {
+      return;
+    }
 
     setIsExchanging(true);
 
@@ -338,7 +376,11 @@ export default function DashboardPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ activity_id: exchangeTargetActivityId }),
+        body: JSON.stringify(
+          isSplit
+            ? { split: { option: exchangeMode, activity_ids: splitActivityIds } }
+            : { activity_id: exchangeTargetActivityId }
+        ),
       });
 
       const result = await response.json();
@@ -350,27 +392,30 @@ export default function DashboardPage() {
           message: result.error || 'Failed to exchange ticket.',
         });
       } else {
+        const newTxns: ExchangedTransaction[] = isSplit
+          ? result.new_transactions
+          : [result.new_transaction];
+
         pushNotification({
           type: 'success',
           title: 'Ticket Exchanged',
-          message: 'The ticket was successfully exchanged.',
+          message: isSplit
+            ? `The ticket was exchanged for ${newTxns.length} new tickets.`
+            : 'The ticket was successfully exchanged.',
         });
 
-        const t = result.new_transaction;
-        const fallbackName = activities.find((a) => a.id === t.activity_id)?.name ?? 'Unknown Activity';
-
-        setPreviewTickets([{
+        setPreviewTickets(newTxns.map((t) => ({
           id: t.id,
           token_number: t.token_number,
           token_index: t.token_index,
           token_total: t.token_total,
           price_type: t.price_type,
           amount: t.amount,
-          activityName: fallbackName,
+          activityName: activities.find((a) => a.id === t.activity_id)?.name ?? 'Unknown Activity',
           cashierName: user?.display_name ?? 'Staff',
           created_at: t.created_at,
           txn_reference: t.txn_reference,
-        }]);
+        })));
 
         handleCloseExchangeModal();
         void refetchTransactions();
@@ -702,40 +747,129 @@ export default function DashboardPage() {
         }}
       />
 
-      {exchangeTxnId && (
+      {exchangeTxnId && (() => {
+        const originalTxn = transactions.find(t => t.id === exchangeTxnId);
+        const availableSplitOptions = originalTxn
+          ? (Object.keys(EXCHANGE_SPLIT_TEMPLATES) as ExchangeSplitOption[]).filter(
+              (option) => EXCHANGE_SPLIT_TEMPLATES[option].forAmount === Number(originalTxn.amount)
+            )
+          : [];
+        const activeTemplate = exchangeMode !== 'swap' ? EXCHANGE_SPLIT_TEMPLATES[exchangeMode] : null;
+        const confirmDisabled =
+          isExchanging ||
+          (exchangeMode === 'swap'
+            ? !exchangeTargetActivityId
+            : splitActivityIds.length === 0 || splitActivityIds.some((id) => !id));
+
+        return (
         <div className="fixed inset-0 z-[65] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
             <h2 className="mb-4 text-xl font-bold text-slate-800">Exchange Ticket</h2>
-            
-            <div className="mb-4 text-sm text-slate-600">
-              <p>Select a new activity to exchange this ticket for.</p>
-              <p className="mt-1 font-semibold text-slate-800">Note: Only activities matching the exact original price are shown.</p>
-            </div>
 
-            <div className="mb-6 space-y-2">
-              <label className="text-sm font-semibold text-slate-700">New Activity</label>
-              <select
-                className="w-full rounded-xl border-2 border-slate-300 p-3 outline-none focus:border-blue-500"
-                value={exchangeTargetActivityId || ''}
-                onChange={(e) => setExchangeTargetActivityId(e.target.value)}
-                disabled={isExchanging}
-              >
-                <option value="" disabled>Select an activity</option>
-                {(() => {
-                  const originalTxn = transactions.find(t => t.id === exchangeTxnId);
-                  if (!originalTxn) return null;
-                  
-                  return activities
-                    .filter(a => {
-                      const activityPrice = originalTxn.price_type === 'local' ? a.local_price : a.foreign_price;
-                      return Number(activityPrice) === Number(originalTxn.amount);
-                    })
-                    .map(a => (
-                      <option key={a.id} value={a.id}>{a.name} ({formatCurrency(originalTxn.price_type === 'local' ? a.local_price : a.foreign_price)})</option>
-                    ));
-                })()}
-              </select>
-            </div>
+            {availableSplitOptions.length > 0 && (
+              <div className="mb-4 space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Exchange Option</label>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    className={`rounded-lg border-2 px-3 py-2 text-xs font-bold transition-colors ${
+                      exchangeMode === 'swap'
+                        ? 'border-slate-900 bg-slate-900 text-white'
+                        : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+                    }`}
+                    onClick={() => handleSelectExchangeMode('swap')}
+                    disabled={isExchanging}
+                  >
+                    Same-price swap
+                  </button>
+                  {availableSplitOptions.map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      className={`rounded-lg border-2 px-3 py-2 text-xs font-bold transition-colors ${
+                        exchangeMode === option
+                          ? 'border-slate-900 bg-slate-900 text-white'
+                          : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+                      }`}
+                      onClick={() => handleSelectExchangeMode(option)}
+                      disabled={isExchanging}
+                    >
+                      {EXCHANGE_SPLIT_TEMPLATES[option].label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {exchangeMode === 'swap' ? (
+              <>
+                <div className="mb-4 text-sm text-slate-600">
+                  <p>Select a new activity to exchange this ticket for.</p>
+                  <p className="mt-1 font-semibold text-slate-800">Note: Only activities matching the exact original price are shown.</p>
+                </div>
+
+                <div className="mb-6 space-y-2">
+                  <label className="text-sm font-semibold text-slate-700">New Activity</label>
+                  <select
+                    className="w-full rounded-xl border-2 border-slate-300 p-3 outline-none focus:border-blue-500"
+                    value={exchangeTargetActivityId || ''}
+                    onChange={(e) => setExchangeTargetActivityId(e.target.value)}
+                    disabled={isExchanging}
+                  >
+                    <option value="" disabled>Select an activity</option>
+                    {originalTxn && activities
+                      .filter(a => {
+                        const activityPrice = originalTxn.price_type === 'local' ? a.local_price : a.foreign_price;
+                        return Number(activityPrice) === Number(originalTxn.amount);
+                      })
+                      .map(a => (
+                        <option key={a.id} value={a.id}>{a.name} ({formatCurrency(originalTxn.price_type === 'local' ? a.local_price : a.foreign_price)})</option>
+                      ))}
+                  </select>
+                </div>
+              </>
+            ) : (
+              activeTemplate && originalTxn && (
+                <>
+                  <div className="mb-4 text-sm text-slate-600">
+                    <p>Select an activity for each new ticket.</p>
+                    <p className="mt-1 font-semibold text-slate-800">
+                      {formatCurrency(Number(originalTxn.amount))} → {activeTemplate.denominations.length} tickets, total {formatCurrency(activeTemplate.forAmount)}
+                    </p>
+                  </div>
+
+                  <div className="mb-6 space-y-3">
+                    {activeTemplate.denominations.map((denomination, slot) => (
+                      <div key={slot} className="space-y-2">
+                        <label className="text-sm font-semibold text-slate-700">
+                          Ticket {slot + 1} — {formatCurrency(denomination)}
+                        </label>
+                        <select
+                          className="w-full rounded-xl border-2 border-slate-300 p-3 outline-none focus:border-blue-500"
+                          value={splitActivityIds[slot] || ''}
+                          onChange={(e) =>
+                            setSplitActivityIds((current) =>
+                              current.map((id, index) => (index === slot ? e.target.value : id))
+                            )
+                          }
+                          disabled={isExchanging}
+                        >
+                          <option value="" disabled>Select an activity</option>
+                          {activities
+                            .filter(a => {
+                              const activityPrice = originalTxn.price_type === 'local' ? a.local_price : a.foreign_price;
+                              return Number(activityPrice) === denomination;
+                            })
+                            .map(a => (
+                              <option key={a.id} value={a.id}>{a.name} ({formatCurrency(denomination)})</option>
+                            ))}
+                        </select>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )
+            )}
 
             <div className="flex justify-end gap-3">
               <Button
@@ -748,14 +882,15 @@ export default function DashboardPage() {
               <Button
                 className="bg-blue-600 font-bold text-white hover:bg-blue-700"
                 onClick={handleConfirmExchange}
-                disabled={!exchangeTargetActivityId || isExchanging}
+                disabled={confirmDisabled}
               >
                 {isExchanging ? 'Exchanging...' : 'Confirm Exchange'}
               </Button>
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
     </>
   );
 }

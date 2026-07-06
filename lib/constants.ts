@@ -17,6 +17,17 @@ export const TOKEN_PADDING = 4;
 // Price types
 export const PRICE_TYPES = ['local', 'foreign'] as const;
 
+// Ticket exchange split templates. A ticket whose amount equals `forAmount`
+// may be exchanged for one new ticket per denomination; the server re-derives
+// all amounts from the template so total value is conserved by construction.
+export const EXCHANGE_SPLIT_TEMPLATES = {
+  '3x500': { forAmount: 1500, denominations: [500, 500, 500], label: '3 × LKR 500' },
+  '1000+500': { forAmount: 1500, denominations: [1000, 500], label: 'LKR 1,000 + LKR 500' },
+  '2x500': { forAmount: 1000, denominations: [500, 500], label: '2 × LKR 500' },
+} as const;
+
+export type ExchangeSplitOption = keyof typeof EXCHANGE_SPLIT_TEMPLATES;
+
 // Debouncing
 export const DEBOUNCE_TAP_MS = 300;
 

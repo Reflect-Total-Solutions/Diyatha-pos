@@ -12,6 +12,7 @@ import TransactionHistory from '@/components/pos/TransactionHistory';
 import { Button } from '@/components/ui/button';
 import { useActivities } from '@/hooks/useActivities';
 import { useAuth } from '@/hooks/useAuth';
+import { usePosSummary } from '@/hooks/usePosSummary';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useNotificationsStore } from '@/stores/notifications';
 import { usePriceModeStore } from '@/stores/priceMode';
@@ -68,12 +69,25 @@ export default function DashboardPage() {
     summary,
     isLoading: isTransactionsLoading,
     isMutating: isTransactionsMutating,
+    isLoadingMore,
+    hasMore,
     refetch: refetchTransactions,
+    loadMore,
     createBulkTransactions,
     cancelTransaction,
     searchTransactions,
   } = useTransactions({
-    limit: 10000,
+    limit: 50,
+    startDate: startOfTodayISO,
+    endDate: endOfTodayISO,
+  });
+
+  // Gross total / Daily Summary is computed server-side (get_pos_daily_summary)
+  // rather than by summing the full day's rows in the browser.
+  const {
+    summary: dailySummary,
+    refetch: refetchSummary,
+  } = usePosSummary({
     startDate: startOfTodayISO,
     endDate: endOfTodayISO,
   });
@@ -274,8 +288,9 @@ export default function DashboardPage() {
         message: `${totalCreated} ticket(s) created successfully. Showing preview...`,
       });
 
-      // Refresh transaction list right away
+      // Refresh transaction list + daily summary right away
       void refetchTransactions();
+      void refetchSummary();
 
       // === Show generated tickets preview in the browser (temp) ===
       const ticketsToPreview: PrintedTicket[] = createdTransactions.map((t) => {
@@ -327,6 +342,7 @@ export default function DashboardPage() {
         title: 'Transaction cancelled',
         message: 'Transaction was marked as cancelled.',
       });
+      void refetchSummary();
     }
 
     setCancellingTransactionId(null);
@@ -419,6 +435,7 @@ export default function DashboardPage() {
 
         handleCloseExchangeModal();
         void refetchTransactions();
+        void refetchSummary();
       }
     } catch (error) {
       pushNotification({
@@ -630,7 +647,7 @@ export default function DashboardPage() {
           </div>
 
           <DailySummary
-            transactions={transactions}
+            summary={dailySummary}
             activeGroupId={summary.currentGroupId}
             activeGroupCount={summary.transactionCount}
             activeGroupAmount={summary.groupTotalAmount}
@@ -648,6 +665,9 @@ export default function DashboardPage() {
           cancellingTransactionId={cancellingTransactionId}
           onCancelTransaction={handleCancelTransaction}
           onExchangeTransaction={handleOpenExchangeModal}
+          onLoadMore={loadMore}
+          hasMore={searchQuery.trim().length < 2 && hasMore}
+          isLoadingMore={isLoadingMore}
           onReprintTransaction={(transactionId) => {
             const t = transactions.find((txn) => txn.id === transactionId);
             if (t) {

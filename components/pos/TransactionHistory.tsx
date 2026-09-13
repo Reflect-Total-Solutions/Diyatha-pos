@@ -23,6 +23,9 @@ type TransactionHistoryProps = {
   onReprintGroup?: (groupId: string) => void;
   cancellingTransactionId?: string | null;
   isLoading?: boolean;
+  onLoadMore?: () => void;
+  hasMore?: boolean;
+  isLoadingMore?: boolean;
 };
 
 function formatCurrency(value: number): string {
@@ -54,6 +57,9 @@ export default function TransactionHistory({
   onReprintGroup,
   cancellingTransactionId = null,
   isLoading = false,
+  onLoadMore,
+  hasMore = false,
+  isLoadingMore = false,
 }: TransactionHistoryProps) {
   return (
     <section className="rounded-2xl border-2 border-slate-300 bg-white p-5 shadow-md">
@@ -183,6 +189,20 @@ export default function TransactionHistory({
           </tbody>
         </table>
       </div>
+
+      {onLoadMore && hasMore && !isLoading ? (
+        <div className="mt-4 flex justify-center">
+          <Button
+            type="button"
+            variant="outline"
+            className="h-11 px-6 font-semibold"
+            disabled={isLoadingMore}
+            onClick={onLoadMore}
+          >
+            {isLoadingMore ? 'Loading…' : 'Load more'}
+          </Button>
+        </div>
+      ) : null}
     </section>
   );
 }

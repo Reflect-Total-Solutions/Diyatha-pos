@@ -101,12 +101,19 @@ export function useTransactions(options: UseTransactionsOptions = {}) {
   const [transactions, setTransactions] = useState<TransactionWithToken[]>([]);
   const [isLoading, setIsLoading] = useState(options.autoFetch !== false);
   const [isMutating, setIsMutating] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(options.page ?? 1);
   const [limit, setLimit] = useState(options.limit ?? 20);
   const [totalPages, setTotalPages] = useState(0);
+  // Highest page currently appended into `transactions`, so loadMore knows what
+  // to request next. loadTransactions resets this back to the first page.
+  const [loadedPage, setLoadedPage] = useState(options.page ?? 1);
+  // Whether the last fetched page came back full. Derived from page fullness
+  // rather than the reported total, since count: 'estimated' can be approximate.
+  const [lastPageFull, setLastPageFull] = useState(false);
 
   const currentGroupId = useTransactionGroupStore((state) => state.currentGroupId);
   const transactionCount = useTransactionGroupStore((state) => state.transactionCount);
@@ -143,11 +150,15 @@ export function useTransactions(options: UseTransactionsOptions = {}) {
         return;
       }
 
-      setTransactions(payload.data ?? []);
+      const rows = payload.data ?? [];
+      const effectiveLimit = options.limit ?? 20;
+      setTransactions(rows);
       setTotal(payload.total ?? 0);
       setPage(payload.page ?? 1);
       setLimit(payload.limit ?? 20);
       setTotalPages(payload.totalPages ?? 0);
+      setLoadedPage(options.page ?? 1);
+      setLastPageFull(rows.length >= effectiveLimit);
     } catch {
       setTransactions([]);
       setError('Unable to load transactions');
@@ -155,6 +166,51 @@ export function useTransactions(options: UseTransactionsOptions = {}) {
       setIsLoading(false);
     }
   }, [options.includeCancelled, options.limit, options.page, options.transactionGroupId, options.startDate, options.endDate]);
+
+  const loadMore = useCallback(async () => {
+    const nextPage = loadedPage + 1;
+    setIsLoadingMore(true);
+
+    try {
+      const response = await fetch(
+        buildListUrl('/api/transactions', {
+          page: nextPage,
+          limit: options.limit ?? 20,
+          transaction_group_id: options.transactionGroupId,
+          include_cancelled: options.includeCancelled,
+          start_date: options.startDate,
+          end_date: options.endDate,
+        }),
+        {
+          method: 'GET',
+          cache: 'no-store',
+        }
+      );
+
+      const payload = (await response.json()) as PaginatedApiResponse<TransactionWithToken>;
+
+      if (!response.ok) {
+        return;
+      }
+
+      const nextRows = payload.data ?? [];
+      const effectiveLimit = options.limit ?? 20;
+      // Append the next page, de-duplicating by id in case new rows inserted
+      // since the first page shifted the offset window.
+      setTransactions((prev) => {
+        const seen = new Set(prev.map((row) => row.id));
+        return [...prev, ...nextRows.filter((row) => !seen.has(row.id))];
+      });
+      setTotal(payload.total ?? 0);
+      setTotalPages(payload.totalPages ?? 0);
+      setLoadedPage(nextPage);
+      setLastPageFull(nextRows.length >= effectiveLimit);
+    } catch {
+      // Keep whatever is already loaded; the button stays available to retry.
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [loadedPage, options.includeCancelled, options.limit, options.transactionGroupId, options.startDate, options.endDate]);
 
   useEffect(() => {
     if (options.autoFetch === false) {
@@ -484,8 +540,11 @@ export function useTransactions(options: UseTransactionsOptions = {}) {
     summary,
     isLoading,
     isMutating,
+    isLoadingMore,
+    hasMore: lastPageFull,
     error,
     refetch: loadTransactions,
+    loadMore,
     startGroup,
     endCurrentGroup,
     createTransaction,

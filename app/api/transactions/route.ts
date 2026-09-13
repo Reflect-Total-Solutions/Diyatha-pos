@@ -64,7 +64,12 @@ export async function GET(request: Request) {
 
     let query = supabase
       .from('transactions')
-      .select('*, tokens!inner(token_number)', { count: 'exact' })
+      // 'estimated' avoids a second full COUNT scan (the pgrst_source_count
+      // CTE) on every load. PostgREST returns an exact count for small result
+      // sets and a planner estimate only once the match set is large, which is
+      // fine for POS pagination. Switch back to 'exact' only if a caller needs
+      // a precise total for small pages.
+      .select('*, tokens!inner(token_number)', { count: 'estimated' })
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 

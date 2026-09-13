@@ -48,6 +48,9 @@ export type UseTransactionsOptions = {
   autoFetch?: boolean;
   startDate?: string;
   endDate?: string;
+  // Skip the server-side count. Use when paging via "load more" (page fullness),
+  // so the endpoint doesn't run the expensive count over the tokens semi-join.
+  skipCount?: boolean;
 };
 
 export type CreateTransactionInput = {
@@ -135,6 +138,7 @@ export function useTransactions(options: UseTransactionsOptions = {}) {
           include_cancelled: options.includeCancelled,
           start_date: options.startDate,
           end_date: options.endDate,
+          count: options.skipCount ? 'none' : undefined,
         }),
         {
           method: 'GET',
@@ -165,7 +169,7 @@ export function useTransactions(options: UseTransactionsOptions = {}) {
     } finally {
       setIsLoading(false);
     }
-  }, [options.includeCancelled, options.limit, options.page, options.transactionGroupId, options.startDate, options.endDate]);
+  }, [options.includeCancelled, options.limit, options.page, options.transactionGroupId, options.startDate, options.endDate, options.skipCount]);
 
   const loadMore = useCallback(async () => {
     const nextPage = loadedPage + 1;
@@ -180,6 +184,7 @@ export function useTransactions(options: UseTransactionsOptions = {}) {
           include_cancelled: options.includeCancelled,
           start_date: options.startDate,
           end_date: options.endDate,
+          count: options.skipCount ? 'none' : undefined,
         }),
         {
           method: 'GET',
@@ -210,7 +215,7 @@ export function useTransactions(options: UseTransactionsOptions = {}) {
     } finally {
       setIsLoadingMore(false);
     }
-  }, [loadedPage, options.includeCancelled, options.limit, options.transactionGroupId, options.startDate, options.endDate]);
+  }, [loadedPage, options.includeCancelled, options.limit, options.transactionGroupId, options.startDate, options.endDate, options.skipCount]);
 
   useEffect(() => {
     if (options.autoFetch === false) {

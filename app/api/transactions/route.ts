@@ -24,6 +24,16 @@ function parsePagination(url: string) {
     ? Math.min(10000, Math.max(1, limitParam))
     : 20;
 
+  // count=none skips the (expensive) exact/estimated count entirely. The count
+  // for this list is a COUNT over the tokens!inner semi-join, which scans the
+  // whole matching set on every load; callers that page via "load more" (page
+  // fullness) never use the total, so they opt out.
+  const countParam = searchParams.get('count');
+  const countMode: 'exact' | 'estimated' | 'none' =
+    countParam === 'none' || countParam === 'exact' || countParam === 'estimated'
+      ? countParam
+      : 'estimated';
+
   return {
     page,
     limit,
@@ -32,6 +42,7 @@ function parsePagination(url: string) {
     cashierId: searchParams.get('cashier_id') ?? undefined,
     startDate: searchParams.get('start_date') ?? undefined,
     endDate: searchParams.get('end_date') ?? undefined,
+    countMode,
   };
 }
 
@@ -59,17 +70,17 @@ export async function GET(request: Request) {
       );
     }
 
-    const { page, limit, includeCancelled, transactionGroupId, cashierId, startDate, endDate } = parsePagination(request.url);
+    const { page, limit, includeCancelled, transactionGroupId, cashierId, startDate, endDate, countMode } = parsePagination(request.url);
     const offset = (page - 1) * limit;
+
+    // Only ask Postgres for a count when the caller actually needs `total`.
+    // count=none is the cheapest: the count would otherwise run a COUNT over the
+    // tokens!inner semi-join across the whole matching set (~1s on a busy day).
+    const selectOptions = countMode === 'none' ? undefined : { count: countMode };
 
     let query = supabase
       .from('transactions')
-      // 'estimated' avoids a second full COUNT scan (the pgrst_source_count
-      // CTE) on every load. PostgREST returns an exact count for small result
-      // sets and a planner estimate only once the match set is large, which is
-      // fine for POS pagination. Switch back to 'exact' only if a caller needs
-      // a precise total for small pages.
-      .select('*, tokens!inner(token_number)', { count: 'estimated' })
+      .select('*, tokens!inner(token_number)', selectOptions)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 

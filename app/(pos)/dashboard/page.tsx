@@ -80,6 +80,7 @@ export default function DashboardPage() {
     limit: 50,
     startDate: startOfTodayISO,
     endDate: endOfTodayISO,
+    skipCount: true,
   });
 
   // Gross total / Daily Summary is computed server-side (get_pos_daily_summary)
@@ -136,6 +137,11 @@ export default function DashboardPage() {
     };
   }, [notifications, removeNotification]);
 
+  // Tracks whether the search effect has run once. The initial page load is
+  // already handled by useTransactions' autoFetch, so we must not refetch it
+  // again here (that caused a duplicate /api/transactions request on mount).
+  const searchInitialisedRef = useRef(false);
+
   useEffect(() => {
     const trimmed = searchQuery.trim();
     const debounceId = setTimeout(() => {
@@ -144,9 +150,13 @@ export default function DashboardPage() {
           q: trimmed,
           limit: 100,
         });
-      } else {
+      } else if (searchInitialisedRef.current) {
+        // Only refetch when the user actively clears/edits the search box,
+        // never on the first mount.
         void refetchTransactions();
       }
+
+      searchInitialisedRef.current = true;
     }, 350);
 
     return () => clearTimeout(debounceId);

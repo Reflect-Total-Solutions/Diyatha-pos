@@ -523,57 +523,48 @@ export async function fetchTransactionsReportData(
   const cashierNameMap = new Map<string, string>();
   const tokenMap = new Map<string, { token_number: string | null; reprint_count: number }>();
 
-  if (activityIds.length > 0) {
-    const { data: activities, error: activitiesError } = await supabase
-      .from('activities')
-      .select('id, name')
-      .in('id', activityIds);
-
-    if (activitiesError) {
-      throw activitiesError;
-    }
-
-    for (const activity of (activities ?? []) as Array<{ id: string; name: string }>) {
-      activityNameMap.set(activity.id, activity.name);
-    }
-  }
-
-  if (cashierIds.length > 0) {
-    const { data: users, error: usersError } = await supabase
-      .from('users')
-      .select('id, display_name')
-      .in('id', cashierIds);
-
-    if (usersError) {
-      throw usersError;
-    }
-
-    for (const user of (users ?? []) as Array<{ id: string; display_name: string }>) {
-      cashierNameMap.set(user.id, user.display_name);
-    }
-  }
-
-  if (transactionIds.length > 0) {
-    const { data: tokens, error: tokensError } = await supabase
-      .from('tokens')
-      .select('transaction_id, token_number, reprint_count')
-      .in('transaction_id', transactionIds);
-
-    if (tokensError) {
-      throw tokensError;
-    }
-
-    for (const token of (tokens ?? []) as Array<{
-      transaction_id: string;
-      token_number: string;
-      reprint_count: number;
-    }>) {
-      tokenMap.set(token.transaction_id, {
-        token_number: token.token_number,
-        reprint_count: token.reprint_count,
-      });
-    }
-  }
+  await Promise.all([
+    (async () => {
+      if (activityIds.length === 0) return;
+      const { data: activities, error: activitiesError } = await supabase
+        .from('activities')
+        .select('id, name')
+        .in('id', activityIds);
+      if (activitiesError) throw activitiesError;
+      for (const activity of (activities ?? []) as Array<{ id: string; name: string }>) {
+        activityNameMap.set(activity.id, activity.name);
+      }
+    })(),
+    (async () => {
+      if (cashierIds.length === 0) return;
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('id, display_name')
+        .in('id', cashierIds);
+      if (usersError) throw usersError;
+      for (const user of (users ?? []) as Array<{ id: string; display_name: string }>) {
+        cashierNameMap.set(user.id, user.display_name);
+      }
+    })(),
+    (async () => {
+      if (transactionIds.length === 0) return;
+      const { data: tokens, error: tokensError } = await supabase
+        .from('tokens')
+        .select('transaction_id, token_number, reprint_count')
+        .in('transaction_id', transactionIds);
+      if (tokensError) throw tokensError;
+      for (const token of (tokens ?? []) as Array<{
+        transaction_id: string;
+        token_number: string;
+        reprint_count: number;
+      }>) {
+        tokenMap.set(token.transaction_id, {
+          token_number: token.token_number,
+          reprint_count: token.reprint_count,
+        });
+      }
+    })(),
+  ]);
 
   const output: TransactionReportRow[] = rows.map((row) => {
     const token = tokenMap.get(row.id);
@@ -686,35 +677,30 @@ export async function fetchShiftReportData(
   const activityNameMap = new Map<string, string>();
   const cashierNameMap = new Map<string, string>();
 
-  if (activityIds.length > 0) {
-    const { data: activities, error: activitiesError } = await supabase
-      .from('activities')
-      .select('id, name')
-      .in('id', activityIds);
-
-    if (activitiesError) {
-      throw activitiesError;
-    }
-
-    for (const activity of (activities ?? []) as Array<{ id: string; name: string }>) {
-      activityNameMap.set(activity.id, activity.name);
-    }
-  }
-
-  if (cashierIds.length > 0) {
-    const { data: users, error: usersError } = await supabase
-      .from('users')
-      .select('id, display_name')
-      .in('id', cashierIds);
-
-    if (usersError) {
-      throw usersError;
-    }
-
-    for (const user of (users ?? []) as Array<{ id: string; display_name: string }>) {
-      cashierNameMap.set(user.id, user.display_name);
-    }
-  }
+  await Promise.all([
+    (async () => {
+      if (activityIds.length === 0) return;
+      const { data: activities, error: activitiesError } = await supabase
+        .from('activities')
+        .select('id, name')
+        .in('id', activityIds);
+      if (activitiesError) throw activitiesError;
+      for (const activity of (activities ?? []) as Array<{ id: string; name: string }>) {
+        activityNameMap.set(activity.id, activity.name);
+      }
+    })(),
+    (async () => {
+      if (cashierIds.length === 0) return;
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('id, display_name')
+        .in('id', cashierIds);
+      if (usersError) throw usersError;
+      for (const user of (users ?? []) as Array<{ id: string; display_name: string }>) {
+        cashierNameMap.set(user.id, user.display_name);
+      }
+    })(),
+  ]);
 
   const output: ShiftReportRow[] = rows.map((row) => ({
     id: row.id,

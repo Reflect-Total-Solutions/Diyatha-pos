@@ -436,6 +436,40 @@ export interface Database {
 				Args: Record<string, never>;
 				Returns: undefined;
 			};
+			search_transactions_v2: {
+				Args: {
+					p_query?: string | null;
+					p_cashier_id?: string | null;
+					p_activity_id?: string | null;
+					p_start_date?: string | null;
+					p_end_date?: string | null;
+					p_include_cancelled?: boolean;
+					p_limit?: number;
+					p_offset?: number;
+				};
+				Returns: {
+					id: string;
+					transaction_group_id: string;
+					cashier_id: string;
+					activity_id: string;
+					price_type: 'local' | 'foreign';
+					amount: number;
+					token_index: number | null;
+					token_total: number | null;
+					txn_reference: string;
+					print_status: 'pending' | 'printed' | 'failed';
+					printed_at: string | null;
+					cancelled_at: string | null;
+					created_at: string;
+					updated_at: string;
+					payment_method: 'cash' | 'card';
+					exchanged_to_transaction_id: string | null;
+					exchanged_from_transaction_id: string | null;
+					is_exchanged: boolean;
+					token_number: string | null;
+					full_count: number;
+				}[];
+			};
 		};
 		Enums: {
 			user_role: 'cashier' | 'admin' | 'vendor';

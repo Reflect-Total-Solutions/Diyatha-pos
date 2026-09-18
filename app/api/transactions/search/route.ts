@@ -64,9 +64,52 @@ export async function GET(request: Request) {
     const offset = (params.page - 1) * params.limit;
 
     const isAdmin = user.role === 'admin';
+    const cashierFilter = !isAdmin ? user.id : params.cashierId || null;
+    const keyword = params.query || params.token || null;
 
-    const keyword = params.query || params.token;
+    // Fast path: Try single-query database-level search RPC with GIN trigram indexes
+    type SearchRpcRow = TransactionRow & {
+      token_number: string | null;
+      full_count: number;
+    };
 
+    const { data: rpcData, error: rpcError } = await supabase.rpc(
+      'search_transactions_v2' as never,
+      {
+        p_query: keyword,
+        p_cashier_id: cashierFilter,
+        p_activity_id: params.activityId || null,
+        p_start_date: params.startDate || null,
+        p_end_date: params.endDate || null,
+        p_include_cancelled: params.includeCancelled,
+        p_limit: params.limit,
+        p_offset: offset,
+      } as never
+    );
+
+    const rpcRows = (rpcData as unknown as SearchRpcRow[] | null) ?? null;
+
+    if (!rpcError && rpcRows) {
+      const total = rpcRows.length > 0 ? Number(rpcRows[0].full_count) : 0;
+      const data = rpcRows.map((row) => {
+        const cleanRow: Partial<SearchRpcRow> = { ...row };
+        delete cleanRow.full_count;
+        return cleanRow as TransactionRow & { token_number: string | null };
+      });
+
+      return Response.json(
+        {
+          data,
+          total,
+          page: params.page,
+          limit: params.limit,
+          totalPages: Math.ceil(total / params.limit),
+        },
+        { status: HTTP_STATUS.OK }
+      );
+    }
+
+    // Fallback path if RPC is not yet created in the database:
     let rows: TransactionRow[] = [];
     let total = 0;
 
@@ -75,7 +118,8 @@ export async function GET(request: Request) {
         .from('transactions')
         .select('*')
         .ilike('txn_reference', `%${keyword}%`)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(params.limit * 5);
 
       if (!isAdmin) {
         refQuery = refQuery.eq('cashier_id', user.id);

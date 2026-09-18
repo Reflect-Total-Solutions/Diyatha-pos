@@ -150,7 +150,7 @@ export async function POST(request: Request) {
       is_active: validation.data.is_active ?? true,
     };
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseServer
       .from('categories')
       .insert(insertPayload as never)
       .select('*')
@@ -182,7 +182,7 @@ export async function POST(request: Request) {
       );
     }
 
-    await supabase.from('audit_log').insert(
+    await supabaseServer.from('audit_log').insert(
       {
         user_id: user.id,
         action: 'CREATE',

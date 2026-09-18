@@ -196,7 +196,7 @@ export async function POST(request: Request) {
       display_order: validation.data.display_order ?? 0,
     };
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseServer
       .from('activities')
       .insert(insertPayload as never)
       .select('*')
@@ -218,7 +218,7 @@ export async function POST(request: Request) {
       );
     }
 
-    await supabase.from('audit_log').insert(
+    await supabaseServer.from('audit_log').insert(
       {
         user_id: user.id,
         action: 'CREATE',

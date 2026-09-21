@@ -463,8 +463,8 @@ export default function DashboardPage() {
       <main className="mx-auto min-h-screen w-full max-w-[1600px] px-4 py-4 sm:px-6 lg:px-8">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-            Phase 6
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-600">
+            Diyatha POS
           </p>
           <h1 className="mt-1 text-2xl font-bold text-slate-900 sm:text-3xl">
             POS Dashboard

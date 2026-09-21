@@ -4,11 +4,11 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "City of Wonder POS",
-    template: "%s | City of Wonder POS",
+    default: "Diyatha POS",
+    template: "%s | Diyatha POS",
   },
   description:
-    "Point-of-sale system for Port City Carnival activities, tickets, and reporting.",
+    "Point-of-sale system for Diyatha POS activities, tickets, and reporting.",
 };
 
 export default function RootLayout({
